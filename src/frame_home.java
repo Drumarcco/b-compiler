@@ -1,5 +1,4 @@
 import javax.swing.*;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
@@ -31,22 +30,27 @@ public class frame_home extends JFrame {
     }
 
     private void readFile(File file){
-        BufferedReader br = null;
+        FileReader fr = null;
 
         try {
             String stringFile = "";
-            String sCurrentLine;
+            int ASCIIChar;
+            fr = new FileReader(file);
 
-            br = new BufferedReader (new FileReader(file));
-            while ((sCurrentLine = br.readLine()) != null){
-                stringFile += sCurrentLine + "\n";
+            while ((ASCIIChar = fr.read()) != -1){
+                char character = (char) ASCIIChar;
+
+
+                String currentCharString = String.valueOf(character);
+                stringFile += currentCharString;
             }
+
             txt_output.setText(stringFile);
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
             try {
-                if (br != null) br.close();
+                if (fr != null) fr.close();
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
