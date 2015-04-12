@@ -37,7 +37,7 @@ public class LexicalStatesTable {
         hash.put("*", 105);
         hash.put("-", 103);
         hash.put("+", 104);
-        hash.put("\'", 6);
+        hash.put("'", 6);
         hash.put("\"", 8);
         hash.put("!", 9);
         hash.put("=", 10);
@@ -67,7 +67,7 @@ public class LexicalStatesTable {
         hash.put("*", 100);
         hash.put("-", 100);
         hash.put("+", 100);
-        hash.put("\'", 100);
+        hash.put("'", 100);
         hash.put("\"", 100);
         hash.put("!", 100);
         hash.put("=", 100);
@@ -97,7 +97,7 @@ public class LexicalStatesTable {
         hash.put("*", 101);
         hash.put("-", 101);
         hash.put("+", 101);
-        hash.put("\'", 101);
+        hash.put("'", 101);
         hash.put("\"", 101);
         hash.put("!", 101);
         hash.put("=", 101);
@@ -127,7 +127,7 @@ public class LexicalStatesTable {
         hash.put("*", 4);
         hash.put("-", 102);
         hash.put("+", 102);
-        hash.put("\'", 102);
+        hash.put("'", 102);
         hash.put("\"", 102);
         hash.put("!", 102);
         hash.put("=", 102);
@@ -157,7 +157,7 @@ public class LexicalStatesTable {
         hash.put("*", 5);
         hash.put("-", 4);
         hash.put("+", 4);
-        hash.put("\'", 4);
+        hash.put("'", 4);
         hash.put("\"", 4);
         hash.put("!", 4);
         hash.put("=", 4);
@@ -187,7 +187,7 @@ public class LexicalStatesTable {
         hash.put("*", 4);
         hash.put("-", 4);
         hash.put("+", 4);
-        hash.put("\'", 4);
+        hash.put("'", 4);
         hash.put("\"", 4);
         hash.put("!", 4);
         hash.put("=", 4);
@@ -217,7 +217,7 @@ public class LexicalStatesTable {
         hash.put("*", 7);
         hash.put("-", 7);
         hash.put("+", 7);
-        hash.put("\'", 7);
+        hash.put("'", 7);
         hash.put("\"", 7);
         hash.put("!", 7);
         hash.put("=", 7);
@@ -247,7 +247,7 @@ public class LexicalStatesTable {
         hash.put("*", 500);
         hash.put("-", 500);
         hash.put("+", 500);
-        hash.put("\'", 106);
+        hash.put("'", 106);
         hash.put("\"", 500);
         hash.put("!", 500);
         hash.put("=", 500);
@@ -277,7 +277,7 @@ public class LexicalStatesTable {
         hash.put("*", 8);
         hash.put("-", 8);
         hash.put("+", 8);
-        hash.put("\'", 8);
+        hash.put("'", 8);
         hash.put("\"", 107);
         hash.put("!", 8);
         hash.put("=", 8);
@@ -307,7 +307,7 @@ public class LexicalStatesTable {
         hash.put("*", 108);
         hash.put("-", 108);
         hash.put("+", 108);
-        hash.put("\'", 108);
+        hash.put("'", 108);
         hash.put("\"", 108);
         hash.put("!", 108);
         hash.put("=", 109);
@@ -337,7 +337,7 @@ public class LexicalStatesTable {
         hash.put("*", 111);
         hash.put("-", 111);
         hash.put("+", 111);
-        hash.put("\'", 111);
+        hash.put("'", 111);
         hash.put("\"", 111);
         hash.put("!", 111);
         hash.put("=", 112);
@@ -367,7 +367,7 @@ public class LexicalStatesTable {
         hash.put("*", 113);
         hash.put("-", 113);
         hash.put("+", 113);
-        hash.put("\'", 113);
+        hash.put("'", 113);
         hash.put("\"", 113);
         hash.put("!", 113);
         hash.put("=", 114);
@@ -397,7 +397,7 @@ public class LexicalStatesTable {
         hash.put("*", 115);
         hash.put("-", 115);
         hash.put("+", 115);
-        hash.put("\'", 115);
+        hash.put("'", 115);
         hash.put("\"", 115);
         hash.put("!", 115);
         hash.put("=", 116);
