@@ -88,6 +88,7 @@ public class frame_home extends JFrame {
                 } else if (lexeme.length() > 1){
                     lexeme += currentChar;
                 }
+                tableValue = searchKeyword(lexeme);
                 Token token = new Token(lexeme, tableValue, lineNumber);
                 addTokenToList(token);
                 state = 0;
@@ -135,7 +136,16 @@ public class frame_home extends JFrame {
 
     private int searchKeyword(String lexeme){
         switch (lexeme){
-            case "main": return 200;
+            case "if": return 200;
+            case "else": return 201;
+            case "while": return 202;
+            case "return": return 203;
+            case "break": return 204;
+            case "goto": return 205;
+            case "next": return 206;
+            case "auto": return 207;
+            case "extrn": return 208;
+            case "main": return 209;
             default: return 100;
         }
     }
