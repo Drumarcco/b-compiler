@@ -26,7 +26,6 @@ public class frame_home extends JFrame {
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setVisible(true);
         lexicalStatesTable = LexicalStatesTable.getInstance();
-        tokenList = new LinkedList<>();
         btn_open.addActionListener(e -> selectFile());
     }
 
@@ -40,6 +39,8 @@ public class frame_home extends JFrame {
     }
 
     private void readFile(File file){
+        tokenList = new LinkedList<>();
+        fileString = "";
         FileReader fr;
         BufferedReader br = null;
         try {
