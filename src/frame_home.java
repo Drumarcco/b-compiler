@@ -11,8 +11,10 @@ import java.util.LinkedList;
  * Time: 03:37 PM
  */
 public class frame_home extends JFrame {
-    private JTextArea txt_output;
+    private JTextArea txt_input;
     private JPanel panel1;
+    private JButton btn_open;
+    private JTextArea txt_output;
     private LexicalStatesTable lexicalStatesTable;
     private LinkedList<Token> tokenList;
     private String fileString = "";
@@ -25,11 +27,10 @@ public class frame_home extends JFrame {
         setVisible(true);
         lexicalStatesTable = LexicalStatesTable.getInstance();
         tokenList = new LinkedList<>();
-        selectFile();
-
+        btn_open.addActionListener(e -> selectFile());
     }
 
-    private void selectFile(){
+    public void selectFile(){
         JFileChooser fileChooser= new JFileChooser();
         int returnValue = fileChooser.showOpenDialog(this);
         if (returnValue == JFileChooser.APPROVE_OPTION){
@@ -48,7 +49,7 @@ public class frame_home extends JFrame {
             while ((line = br.readLine()) != null){
                 fileString += line + "\n";
             }
-            txt_output.setText(fileString);
+            txt_input.setText(fileString);
             generateTokens();
             printTokenList();
         } catch (IOException ex) {
@@ -88,7 +89,7 @@ public class frame_home extends JFrame {
                 } else if (lexeme.length() > 1){
                     lexeme += currentChar;
                 }
-                tableValue = searchKeyword(lexeme);
+                if (tableValue == 100) tableValue = searchKeyword(lexeme);
                 Token token = new Token(lexeme, tableValue, lineNumber);
                 addTokenToList(token);
                 state = 0;
@@ -115,11 +116,12 @@ public class frame_home extends JFrame {
     }
 
     private void printTokenList(){
+        txt_output.setText("");
         for(Token token : tokenList){
             String line = "Token: ";
             line += token.tableValue + " ";
             line += token.lexeme;
-            System.out.println(line);
+            txt_output.append(line + "\n");
         }
     }
 
