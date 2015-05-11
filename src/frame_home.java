@@ -1,4 +1,6 @@
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -15,18 +17,50 @@ public class frame_home extends JFrame {
     private JPanel panel1;
     private JButton btn_open;
     private JTextArea txt_output;
+    private JButton btn_read;
     private LexicalStatesTable lexicalStatesTable;
     private LinkedList<Token> tokenList;
     private String fileString = "";
 
     public frame_home(){
         super("B Compiler Lexical Analysis");
+        initializeFrame();
+        addListeners();
+
+        lexicalStatesTable = LexicalStatesTable.getInstance();
+    }
+
+    private void initializeFrame(){
         setContentPane(panel1);
         pack();
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setVisible(true);
-        lexicalStatesTable = LexicalStatesTable.getInstance();
+    }
+
+    private void addListeners(){
+        txt_input.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                fileString = txt_input.getText();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                fileString = txt_input.getText();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+
+            }
+        });
+
         btn_open.addActionListener(e -> selectFile());
+        btn_read.addActionListener(e -> {
+            txt_output.setText("");
+            generateTokens();
+            printTokenList();
+        });
     }
 
     public void selectFile(){
@@ -39,7 +73,6 @@ public class frame_home extends JFrame {
     }
 
     private void readFile(File file){
-        tokenList = new LinkedList<>();
         fileString = "";
         FileReader fr;
         BufferedReader br = null;
@@ -67,6 +100,7 @@ public class frame_home extends JFrame {
     }
 
     private void generateTokens(){
+        tokenList = new LinkedList<>();
         int lineNumber = 1;
         int state = 0;
         String lexeme = "";
@@ -96,9 +130,23 @@ public class frame_home extends JFrame {
                 state = 0;
                 lexeme = "";
             } else if (tableValue >= 500) {
-                System.out.println("ERROR!");
+                printError(tableValue, lineNumber);
                 break;
             }
+        }
+    }
+
+    private void printError(int errorNumber, int lineNumber){
+        String message = getError(errorNumber) + "\nLinea: " + lineNumber;
+        JOptionPane.showMessageDialog(this, message);
+    }
+
+    private String getError(int errorNumber){
+        switch (errorNumber){
+            case 500: return "Error 500. Caracter no válido.";
+            case 501: return "Error 501. Fin de archivo inesperado.";
+            case 502: return "Error 502. Nueva linea inesperada.";
+            default: return "Error " + errorNumber + ".";
         }
     }
 
@@ -134,7 +182,16 @@ public class frame_home extends JFrame {
 
     private int getTableValue(int state, String key){
         HashMap row = lexicalStatesTable.table.get(state);
-        return (int) row.get(key);
+        try {
+            return (int) row.get(key);
+        } catch (NullPointerException nullException){
+            if (isCurrentStateComment(state)) return 4;
+            return 500;
+        }
+    }
+
+    private boolean isCurrentStateComment(int state){
+        return state == 4;
     }
 
     private int searchKeyword(String lexeme){
