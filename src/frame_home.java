@@ -5,7 +5,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.LinkedList;
 
 /**
@@ -41,12 +40,12 @@ public class frame_home extends JFrame {
         txt_input.getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) {
-                fileString = txt_input.getText();
+                fileString = txt_input.getText() + "\n";
             }
 
             @Override
             public void removeUpdate(DocumentEvent e) {
-                fileString = txt_input.getText();
+                fileString = txt_input.getText() + "\n";
             }
 
             @Override
@@ -106,22 +105,21 @@ public class frame_home extends JFrame {
         String lexeme = "";
         for (int i=0; i<fileString.length(); i++){
             char currentChar = fileString.charAt(i);
-            if (state==0) lexeme += currentChar;
-            String key = checkAlphaDigit(currentChar);
             if (currentChar == '\n') lineNumber++;
+            String key = checkAlphaDigit(currentChar);
 
-            int tableValue = getTableValue(state, key);
+            int tableValue = lexicalStatesTable.getTableValue(state, key);
 
             if (tableValue == 0){
                 state = 0;
                 lexeme = "";
             } else if (tableValue < 100){
-                if (state != 0) lexeme += currentChar;
+                lexeme += currentChar;
                 state = tableValue;
             } else if (tableValue >= 100 && tableValue < 500){
                 if (isIndexDecrementRequired(tableValue)){
                     i--;
-                } else if (lexeme.length() > 1){
+                } else {
                     lexeme += currentChar;
                 }
                 if (tableValue == 100) tableValue = searchKeyword(lexeme);
@@ -178,20 +176,6 @@ public class frame_home extends JFrame {
         if (Character.isLetter(character) || character == '_') return "Alpha";
         if (Character.isDigit(character)) return "Digit";
         return character + "";
-    }
-
-    private int getTableValue(int state, String key){
-        HashMap row = lexicalStatesTable.table.get(state);
-        try {
-            return (int) row.get(key);
-        } catch (NullPointerException nullException){
-            if (isCurrentStateComment(state)) return 4;
-            return 500;
-        }
-    }
-
-    private boolean isCurrentStateComment(int state){
-        return state == 4;
     }
 
     private int searchKeyword(String lexeme){

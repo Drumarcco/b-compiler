@@ -426,4 +426,14 @@ public class LexicalStatesTable {
         }
         return instance;
     }
+
+    public int getTableValue(int state, String key){
+        HashMap row = table.get(state);
+        try {
+            return (int) row.get(key);
+        } catch (NullPointerException nullException){
+            if (state == 4) return 4;
+            return 500;
+        }
+    }
 }
