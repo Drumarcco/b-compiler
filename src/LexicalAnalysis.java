@@ -61,7 +61,6 @@ public class LexicalAnalysis {
             case 100: return true;
             case 101: return true;
             case 102: return true;
-            case 103: return true;
             case 108: return true;
             case 111: return true;
             case 113: return true;
