@@ -14,56 +14,73 @@ public class SyntacticalAnalysis {
     public SyntacticalAnalysis() {
         listIterator = LexicalAnalysis.tokenList.listIterator();
         getNextToken();
-        program();
+        if (isProgram()) JOptionPane.showMessageDialog(null, "Sintaxis correcta.");
+        else JOptionPane.showMessageDialog(null, "Sintaxis incorrecta.");
     }
 
-    private Boolean program(){
+    private Boolean isProgram(){
         if (currentToken == null) return true;
-        else if (isDefinition()) program();
-        JOptionPane.showMessageDialog(null, "Sintaxis correcta.");
-        return true;
+        else if (isDefinition()) {
+            isProgram();
+            return true;
+        }
+        return false;
     }
 
     private Boolean isDefinition() {
-        if (isName(currentToken)) {                                                     // name
-            if (isLeftBracket(currentToken)) {                                          // [
-                if (isConstant(currentToken)){                                          // constant
-                    if (isRightBracket(currentToken)){                                  // ]
-                        if (isIval(currentToken)) {                                     // ival
-                            if(isComma(currentToken)){                                  // ,
-                                while (isIval(currentToken)){                           // ival
-                                    if(isComma(currentToken));                          // ,
-                                    else if (isSemiColon(currentToken)) return true;    // ;
+        if (isName(currentToken)) {
+            if (isLeftBracket(currentToken)) {
+                if (isConstant(currentToken)){
+                    if (isRightBracket(currentToken)){
+                        if (isIval(currentToken)) {
+                            if(isComma(currentToken)){
+                                while (isIval(currentToken)){
+                                    if(isComma(currentToken));
+                                    else if (isSemiColon(currentToken)) return true;
                                 }
+                                printError(509);
                                 return false;
-                            } else if (isSemiColon(currentToken)){                      // ;
-                                getNextToken();
+                            } else if (isSemiColon(currentToken)){
                                 return true;
+                            } else {
+                                printError(509);
+                                return false;
                             }
                         } else if (isSemiColon(currentToken)) {
-                            getNextToken();
                             return true;
+                        } else {
+                            printErrorStack(new int[]{506, 509});
+                            return false;
                         }
+                    } else {
+                        printError(508);
+                        return false;
                     }
                 } else if (isRightBracket(currentToken)){
-                    if (isIval(currentToken)) {                                     // ival
-                        if(isComma(currentToken)){                                  // ,
-                            while (isIval(currentToken)){                           // ival
-                                if(isComma(currentToken));                          // ,
+                    if (isIval(currentToken)) {
+                        if(isComma(currentToken)){
+                            while (isIval(currentToken)){
+                                if(isComma(currentToken));
                                 else if (isSemiColon(currentToken)) {
-                                    getNextToken();
-                                    return true;    // ;
+                                    return true;
                                 }
                             }
+                            printError(509);
                             return false;
-                        } else if (isSemiColon(currentToken)){
-                            getNextToken();
+                        } else if (isSemiColon(currentToken)) {
                             return true;
                         }
+                        printError(509);
+                        return false;
                     } else if (isSemiColon(currentToken)) {
-                        getNextToken();
                         return true;
+                    } else {
+                        printErrorStack(new int[]{506, 509});
+                        return false;
                     }
+                } else {
+                    printErrorStack(new int[]{507, 508});
+                    return false;
                 }
             } else if (isLeftParenthesis(currentToken)){
                 if (isName(currentToken)){
@@ -73,36 +90,35 @@ public class SyntacticalAnalysis {
                             else if (isRightParenthesis(currentToken)) break;
                         }
                         if (isStatement(currentToken)) {
-                            getNextToken();
                             return true;
                         }
                         return false;
                     }
                 }
             } else if(isIval(currentToken)){
-                if(isComma(currentToken)){                                  // ,
-                    while (isIval(currentToken)){                           // ival
-                        if(isComma(currentToken));                          // ,
+                if(isComma(currentToken)){
+                    while (isIval(currentToken)){
+                        if(isComma(currentToken));
                         else if (isSemiColon(currentToken)) {
-                            getNextToken();
-                            return true;    // ;
+                            return true;
                         }
                     }
                     return false;
-                } else if (isSemiColon(currentToken)){                      // ;
-                    getNextToken();
+                } else if (isSemiColon(currentToken)){
                     return true;
                 }
             }
             else if (isSemiColon(currentToken)) {
-                getNextToken();
                 return true;
             }
             else {
                 printErrorStack(new int[]{504, 505, 506});
+                return false;
             }
+        } else {
+            printError(503);
+            return false;
         }
-        printError(503);
         return false;
     }
 
@@ -133,7 +149,10 @@ public class SyntacticalAnalysis {
             case 503 : return "Se espera bloque 'name'.";
             case 504 : return "Se espera apertura de corchete.";
             case 505 : return "Se espera apertura de parentesis.";
-            case 506 : return "Se espera bloque 'ival'";
+            case 506 : return "Se espera bloque 'ival'.";
+            case 507 : return "Se espera un bloque 'constant'.";
+            case 508 : return "Se espera una cerradura de corchete.";
+            case 509 : return "se espera punto y coma.";
         }
         return "";
     }
