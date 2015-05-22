@@ -6,7 +6,7 @@ import java.util.LinkedList;
  * Time: 11:19 AM
  */
 public class LexicalAnalysis {
-    public LinkedList<Token> tokenList;
+    public static LinkedList<Token> tokenList;
     private LexicalStatesTable lexicalStatesTable;
     public String fileString = "";
 

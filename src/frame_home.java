@@ -56,6 +56,7 @@ public class frame_home extends JFrame {
             txt_output.setText("");
             lexicalAnalysis.generateTokens();
             printTokenList();
+            SyntacticalAnalysis syntacticalAnalysis = new SyntacticalAnalysis();
         });
     }
 
