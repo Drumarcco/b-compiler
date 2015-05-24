@@ -469,10 +469,10 @@ public class SyntacticalAnalysis {
 
     private String getErrorMessage(int errorNumber){
         switch (errorNumber){
-            case 503 : return "Se espera bloque 'name'.";
+            case 503 : return "Se espera identificador.";
             case 504 : return "Se espera apertura de corchete.";
             case 505 : return "Se espera apertura de parentesis.";
-            case 506 : return "Se espera bloque 'ival'.";
+            case 506 : return "Se espera bloque constante o identificador.";
             case 507 : return "Se espera un bloque 'constant'.";
             case 508 : return "Se espera cerradura de corchete.";
             case 509 : return "Se espera punto y coma.";
