@@ -1,0 +1,624 @@
+<!DOCTYPE HTML>
+<html>
+    <header>
+        <title>B Compiler</title>
+        <meta charset="utf-8">
+        <style type="text/css">
+            table {
+                background-color: lightgray;
+                border-width: 2px;
+                border-style: solid;
+            }
+            
+            th {
+                background-color: lightblue;
+                border-style: solid;
+                border-width: 1px;
+                padding: 2px 10px;
+            }
+            
+            td {
+                text-align: center;
+                border-style: solid;
+                border-width: 1px;
+            }
+            
+            .state {
+                background-color: lightgray;
+            }
+            
+            .token {
+                background-color: lightyellow;
+            }
+            
+            .error {
+                background-color: lightcoral;
+            }
+            
+            .legend {
+                display: inline-block;
+                padding: 10px;
+                border: solid 1px;                
+            }
+            
+            strike {
+                color: red;
+            }
+            
+            #caracteristicas {
+                display: inline-block;
+            }
+            
+            #caracteristicas img {
+                margin-right: 10px;
+            }
+            
+            
+        </style>
+    </header>
+    <body>
+        <h1>Compilador de Lenguaje B</h1>
+        <h2>Características</h2>
+        <div id="caracteristicas">
+            <p><strong>B</strong> es un lenguaje de programación desarrollado en Bell Labs en 1969 por Ken Thompson y Dennis Ritchie. B es una derivación de BCPL (Basic Combined Programming Language), y su nombre puede ser una abreviación de BCPL.</p>
+            <p>B fue diseñado para aplicaciones recursivas, no numéricas, independientes de maquina, tales como software de sistemas y lenguaje.</p>
+            <p>Thompson inventó la asignación aritmética para B, usando por ejemplo "x =+ y" para sumar 'y' a 'x'.</p>
+            <p>B no tiene tipado, o más precisamente, solo tiene un tipo de dato: la palabra de computadora.</p>
+        </div>
+        
+        
+        
+        
+        
+        <h2>Análisis Léxico</h2>
+        <h2>Tabla de Estados</h2>
+        <div>
+            <table>
+                <tr>
+                    <th>Q\E</th>
+                    <th>Alpha</th>
+                    <th>Digit</th>
+                    <th>/</th>
+                    <th>*</th>
+                    <th>-</th>
+                    <th>+</th>
+                    <th>'</th>
+                    <th>"</th>
+                    <th>!</th>
+                    <th>=</th>
+                    <th>|</th>
+                    <th>&amp;</th>
+                    <th>&lt;</th>
+                    <th>&gt;</th>
+                    <th>&#59;</th>
+                    <th>&#44;</th>
+                    <th>&#40;</th>
+                    <th>&#41;</th>
+                    <th>&#123;</th>
+                    <th>&#125;</th>
+                    <th>&#91;</th>
+                    <th>&#93;</th>
+                    <th>WS</th>
+                    <th>Tab</th>
+                    <th>NL</th>
+                    <th>OC</th>
+                </tr>
+                <tr>
+                    <td>0</td>
+                    <td>1</td>
+                    <td>2</td>
+                    <td>3</td>
+                    <td>105</td>
+                    <td>103</td>
+                    <td>104</td>
+                    <td>6</td>
+                    <td>8</td>
+                    <td>9</td>
+                    <td>10</td>
+                    <td>125</td>
+                    <td>110</td>
+                    <td>11</td>
+                    <td>12</td>
+                    <td>117</td>
+                    <td>118</td>
+                    <td>119</td>
+                    <td>120</td>
+                    <td>121</td>
+                    <td>122</td>
+                    <td>123</td>
+                    <td>124</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>0</td>
+                    <td>500</td>
+                </tr>
+                <tr>
+                    <td>1</td>
+                    <td>1</td>
+                    <td>1</td>
+                    <td>100</td>
+                    <td>100</td>
+                    <td>100</td>
+                    <td>100</td>
+                    <td>100</td>
+                    <td>100</td>
+                    <td>100</td>
+                    <td>100</td>
+                    <td>100</td>
+                    <td>100</td>
+                    <td>100</td>
+                    <td>100</td>
+                    <td>100</td>
+                    <td>100</td>
+                    <td>100</td>
+                    <td>100</td>
+                    <td>100</td>
+                    <td>100</td>
+                    <td>100</td>
+                    <td>100</td>
+                    <td>100</td>
+                    <td>100</td>
+                    <td>100</td>
+                    <td>100</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td>101</td>
+                    <td>2</td>
+                    <td>101</td>
+                    <td>101</td>
+                    <td>101</td>
+                    <td>101</td>
+                    <td>101</td>
+                    <td>101</td>
+                    <td>101</td>
+                    <td>101</td>
+                    <td>101</td>
+                    <td>101</td>
+                    <td>101</td>
+                    <td>101</td>
+                    <td>101</td>
+                    <td>101</td>
+                    <td>101</td>
+                    <td>101</td>
+                    <td>101</td>
+                    <td>101</td>
+                    <td>101</td>
+                    <td>101</td>
+                    <td>101</td>
+                    <td>101</td>
+                    <td>101</td>
+                    <td>101</td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td>102</td>
+                    <td>102</td>
+                    <td>102</td>
+                    <td>4</td>
+                    <td>102</td>
+                    <td>102</td>
+                    <td>102</td>
+                    <td>102</td>
+                    <td>102</td>
+                    <td>102</td>
+                    <td>102</td>
+                    <td>102</td>
+                    <td>102</td>
+                    <td>102</td>
+                    <td>102</td>
+                    <td>102</td>
+                    <td>102</td>
+                    <td>102</td>
+                    <td>102</td>
+                    <td>102</td>
+                    <td>102</td>
+                    <td>102</td>
+                    <td>102</td>
+                    <td>102</td>
+                    <td>102</td>
+                    <td>102</td>
+                </tr>
+                <tr>
+                    <td>4</td>
+                    <td>4</td>
+                    <td>4</td>
+                    <td>4</td>
+                    <td>5</td>
+                    <td>4</td>
+                    <td>4</td>
+                    <td>4</td>
+                    <td>4</td>
+                    <td>4</td>
+                    <td>4</td>
+                    <td>4</td>
+                    <td>4</td>
+                    <td>4</td>
+                    <td>4</td>
+                    <td>4</td>
+                    <td>4</td>
+                    <td>4</td>
+                    <td>4</td>
+                    <td>4</td>
+                    <td>4</td>
+                    <td>4</td>
+                    <td>4</td>
+                    <td>4</td>
+                    <td>4</td>
+                    <td>4</td>
+                    <td>4</td>
+                </tr>
+                <tr>
+                    <td>5</td>
+                    <td>4</td>
+                    <td>4</td>
+                    <td>0</td>
+                    <td>4</td>
+                    <td>4</td>
+                    <td>4</td>
+                    <td>4</td>
+                    <td>4</td>
+                    <td>4</td>
+                    <td>4</td>
+                    <td>4</td>
+                    <td>4</td>
+                    <td>4</td>
+                    <td>4</td>
+                    <td>4</td>
+                    <td>4</td>
+                    <td>4</td>
+                    <td>4</td>
+                    <td>4</td>
+                    <td>4</td>
+                    <td>4</td>
+                    <td>4</td>
+                    <td>4</td>
+                    <td>4</td>
+                    <td>4</td>
+                    <td>4</td>
+                </tr>
+                <tr>
+                    <td>6</td>
+                    <td>7</td>
+                    <td>7</td>
+                    <td>7</td>
+                    <td>7</td>
+                    <td>7</td>
+                    <td>7</td>
+                    <td>7</td>
+                    <td>7</td>
+                    <td>7</td>
+                    <td>7</td>
+                    <td>7</td>
+                    <td>7</td>
+                    <td>7</td>
+                    <td>7</td>
+                    <td>7</td>
+                    <td>7</td>
+                    <td>7</td>
+                    <td>7</td>
+                    <td>7</td>
+                    <td>7</td>
+                    <td>7</td>
+                    <td>7</td>
+                    <td>7</td>
+                    <td>7</td>
+                    <td>7</td>
+                    <td>7</td>
+                </tr>
+                <tr>
+                    <td>7</td>
+                    <td>500</td>
+                    <td>500</td>
+                    <td>500</td>
+                    <td>500</td>
+                    <td>500</td>
+                    <td>500</td>
+                    <td>106</td>
+                    <td>500</td>
+                    <td>500</td>
+                    <td>500</td>
+                    <td>500</td>
+                    <td>500</td>
+                    <td>500</td>
+                    <td>500</td>
+                    <td>500</td>
+                    <td>500</td>
+                    <td>500</td>
+                    <td>500</td>
+                    <td>500</td>
+                    <td>500</td>
+                    <td>500</td>
+                    <td>500</td>
+                    <td>500</td>
+                    <td>500</td>
+                    <td>502</td>
+                    <td>500</td>
+                </tr>
+                <tr>
+                    <td>8</td>
+                    <td>8</td>
+                    <td>8</td>
+                    <td>8</td>
+                    <td>8</td>
+                    <td>8</td>
+                    <td>8</td>
+                    <td>8</td>
+                    <td>107</td>
+                    <td>8</td>
+                    <td>8</td>
+                    <td>8</td>
+                    <td>8</td>
+                    <td>8</td>
+                    <td>8</td>
+                    <td>8</td>
+                    <td>8</td>
+                    <td>8</td>
+                    <td>8</td>
+                    <td>8</td>
+                    <td>8</td>
+                    <td>8</td>
+                    <td>8</td>
+                    <td>8</td>
+                    <td>8</td>
+                    <td>502</td>
+                    <td>8</td>
+                </tr>
+                <tr>
+                    <td>9</td>
+                    <td>108</td>
+                    <td>108</td>
+                    <td>108</td>
+                    <td>108</td>
+                    <td>108</td>
+                    <td>108</td>
+                    <td>108</td>
+                    <td>108</td>
+                    <td>108</td>
+                    <td>109</td>
+                    <td>108</td>
+                    <td>108</td>
+                    <td>108</td>
+                    <td>108</td>
+                    <td>108</td>
+                    <td>108</td>
+                    <td>108</td>
+                    <td>108</td>
+                    <td>108</td>
+                    <td>108</td>
+                    <td>108</td>
+                    <td>108</td>
+                    <td>108</td>
+                    <td>108</td>
+                    <td>108</td>
+                    <td>108</td>
+                </tr>
+                <tr>
+                    <td>10</td>
+                    <td>111</td>
+                    <td>111</td>
+                    <td>111</td>
+                    <td>111</td>
+                    <td>111</td>
+                    <td>111</td>
+                    <td>111</td>
+                    <td>111</td>
+                    <td>111</td>
+                    <td>112</td>
+                    <td>111</td>
+                    <td>111</td>
+                    <td>111</td>
+                    <td>111</td>
+                    <td>111</td>
+                    <td>111</td>
+                    <td>111</td>
+                    <td>111</td>
+                    <td>111</td>
+                    <td>111</td>
+                    <td>111</td>
+                    <td>111</td>
+                    <td>111</td>
+                    <td>111</td>
+                    <td>111</td>
+                    <td>111</td>
+                </tr>
+                <tr>
+                    <td>11</td>
+                    <td>113</td>
+                    <td>113</td>
+                    <td>113</td>
+                    <td>113</td>
+                    <td>113</td>
+                    <td>113</td>
+                    <td>113</td>
+                    <td>113</td>
+                    <td>113</td>
+                    <td>114</td>
+                    <td>113</td>
+                    <td>113</td>
+                    <td>113</td>
+                    <td>113</td>
+                    <td>113</td>
+                    <td>113</td>
+                    <td>113</td>
+                    <td>113</td>
+                    <td>113</td>
+                    <td>113</td>
+                    <td>113</td>
+                    <td>113</td>
+                    <td>113</td>
+                    <td>113</td>
+                    <td>113</td>
+                    <td>113</td>
+                </tr>
+                <tr>
+                    <td>12</td>
+                    <td>115</td>
+                    <td>115</td>
+                    <td>115</td>
+                    <td>115</td>
+                    <td>115</td>
+                    <td>115</td>
+                    <td>115</td>
+                    <td>115</td>
+                    <td>115</td>
+                    <td>116</td>
+                    <td>115</td>
+                    <td>115</td>
+                    <td>115</td>
+                    <td>115</td>
+                    <td>115</td>
+                    <td>115</td>
+                    <td>115</td>
+                    <td>115</td>
+                    <td>115</td>
+                    <td>115</td>
+                    <td>115</td>
+                    <td>115</td>
+                    <td>115</td>
+                    <td>115</td>
+                    <td>115</td>
+                    <td>115</td>
+                </tr>
+            </table>
+        </div>
+        <h2>Simbología</h2>
+        <p class="state legend">Estado</p>
+        <p class="token legend">Token</p>
+        <p class="error legend">Error</p>
+        <h2>Notas</h2>
+        <ul>
+            <li>Alpha incluye al caracter '_'.</li>
+        </ul>
+        
+        <h2>Palabras Reservadas</h2>
+        <ul>
+            <li>200 - if</li>
+            <li>201 - else</li>
+            <li>202 - while</li>
+            <li>203 - return</li>
+            <li>204 - break</li>
+            <li>205 - goto</li>
+            <li>206 - next</li>
+            <li>207 - auto</li>
+            <li>208 - extrn</li>
+            <li>209 - main</li>
+        </ul>
+        
+        <h2>Errores Léxicos</h2>
+        <ul>
+            <li>500: Caracter no válido.</li>
+            <li>501: Fin de archivo inesperado.</li>
+            <li>502: Nueva Linea Inesperada</li>
+        </ul>
+        
+        <h2>Análisis Sintáctico</h2>
+        <h2>BNF</h2>
+        <pre><code>
+program ::=
+    {definition}<sub>0</sub>
+
+definition ::=
+    name {[ {constant}<sub>0</sub><sup>1</sup> ]}<sub>0</sub><sup>1</sup> {ival {, ival}<sub>0</sub> }<sub>0</sub><sup>1</sup> ;
+    name ( {name {, name}<sub>0</sub> }<sub>0</sub><sup>1</sup> ) statement
+
+ival ::=
+    constant
+    name
+
+statement ::=
+    auto name {constant}<sub>0</sub><sup>1</sup> {, name {constant}<sub>0</sub><sup>1</sup> }<sub>0</sub> ; statement
+    extrn name {, name}<sub>0</sub> ; statement
+    <strike>name : statement</strike>
+    <strike>case constant : statement</strike>
+    { {statement}<sub>0</sub> }
+    if ( rvalue ) statement {else statement}<sub>0</sub><sup>1</sup>
+    while ( rvalue ) statement
+    <strike>switch rvalue statement</strike>
+    goto rvalue ;
+    return {( rvalue )}<sub>0</sub><sup>1</sup> ;
+    {rvalue}<sub>0</sub><sup>1</sup> ;
+
+rvalue ::=
+    ( rvalue )
+    lvalue
+    constant
+    lvalue assign rvalue
+    <strike>inc-dec lvalue</strike>
+    <strike>lvalue inc-dec</strike>
+    unary rvalue
+    &amp; lvalue
+    rvalue binary rvalue
+    <strike>rvalue ? rvalue : rvalue</strike>
+    rvalue ( {rvalue {, rvalue}<sub>0</sub> }<sub>0</sub><sup>1</sup> )
+
+assign ::=
+    = {binary}<sub>0</sub><sup>1</sup>
+
+<strike>inc-dec ::=</strike>
+    <strike>++</strike>
+    <strike>--</strike>
+
+unary ::=
+    -
+    !
+
+binary ::=
+    |
+    &amp;
+    ==
+    !=
+    &lt;
+    &lt;=
+    &gt;>
+    &gt;=
+    <strike>&lt;&lt;</strike>
+    <strike>&gt;&gt;</strike>
+    -
+    +
+    <strike>%</strike>
+    *
+    /
+
+lvalue ::=
+    name
+    * rvalue
+    <strike>rvalue [ rvalue ]</strike>
+
+constant ::=
+    {digit}<sub>1</sub>
+    ' {char}<sub>1</sub><sup>2</sup> '
+    " {char}<sub>0</sub> "
+
+name ::=
+    alpha {alpha-digit}<sub>0</sub>
+
+alpha-digit ::=
+    alpha
+    digit
+        </code></pre>
+        
+        <h2>Errores Sintácticos</h2>
+        <ul>
+            <li>503: Se espera identificador.</li>
+            <li>505: Se espera apertura de paréntesis.</li>
+            <li>506: Se espera constante o identificador.</li>
+            <li>508: Se espera cerradura de corchete.</li>
+            <li>509: Se espera punto y coma.</li>
+            <li>519: Se espera cerradura de paréntesis.</li>            
+        </ul>
+        
+        
+        <script type="text/javascript">
+            var cells = document.getElementsByTagName('td');
+            for (var i=0; i<cells.length; i++){
+                var cellValue = cells[i].innerHTML;
+                if (cellValue >= 100 && cellValue < 200) {
+                    cells[i].className = 'token';
+                } else if (cellValue >= 500 && cellValue < 600){
+                    cells[i].className = 'error';
+                }
+            }
+        </script>
+    </body>
+</html>
