@@ -101,6 +101,7 @@ public class frame_home extends JFrame {
         for(Token token : lexicalAnalysis.tokenList){
             String line = "Token: ";
             line += token.tableValue + " ";
+            line += token.lineNumber + " ";
             line += token.lexeme;
             txt_output.append(line + "\n");
         }
