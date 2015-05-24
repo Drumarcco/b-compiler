@@ -41,7 +41,7 @@ public class LexicalStatesTable {
         hash.put("\"", 8);
         hash.put("!", 9);
         hash.put("=", 10);
-        hash.put("|", 109);
+        hash.put("|", 125);
         hash.put("&", 110);
         hash.put("<", 11);
         hash.put(">", 12);

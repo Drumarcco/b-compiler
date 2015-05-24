@@ -248,7 +248,7 @@ public class SyntacticalAnalysis {
             }
         } else if (isIf(currentToken)) {
             if (isLeftParenthesis(currentToken)){
-                if (isRvalue(currentToken)){
+                if (isRvalue()){
                     if (isRightParenthesis(currentToken)){
                         if (isStatement()){
                             if (isElse(currentToken)) {
@@ -272,7 +272,7 @@ public class SyntacticalAnalysis {
             }
         } else if (isWhile(currentToken)){
             if (isLeftParenthesis(currentToken)){
-                if (isRvalue(currentToken)){
+                if (isRvalue()){
                     if (isRightParenthesis(currentToken)){
                         if (isStatement()){
                             return true;
@@ -293,7 +293,7 @@ public class SyntacticalAnalysis {
                 return false;
             }
         } else if (isGoto(currentToken)){
-            if (isRvalue(currentToken)){
+            if (isRvalue()){
                 if (isSemiColon(currentToken)){
                     return true;
                 } else {
@@ -306,7 +306,7 @@ public class SyntacticalAnalysis {
             }
         } else if (isReturn(currentToken)){
             if (isLeftParenthesis(currentToken)){
-                if (isRvalue(currentToken)){
+                if (isRvalue()){
                     if (isRightParenthesis(currentToken)){
                         if(isSemiColon(currentToken)){
                             return true;
@@ -328,7 +328,7 @@ public class SyntacticalAnalysis {
                 printErrorStack(new int[]{505, 509});
                 return false;
             }
-        } else if (isRvalue(currentToken)) {
+        } else if (isRvalue()) {
             if(isSemiColon(currentToken)){
                 return true;
             } else {
@@ -344,8 +344,114 @@ public class SyntacticalAnalysis {
         return false;
     }
 
-    private Boolean isRvalue(Token token){
-        return false;
+    private Boolean isRvalue(){
+        if (isLeftParenthesis(currentToken)){
+            if (isRvalue()){
+                if (isRightParenthesis(currentToken)){
+                    if (isRvalueTail()){
+                        return true;
+                    } else {
+                        printError(520);
+                        return false;
+                    }
+                } else {
+                    printError(519);
+                    return false;
+                }
+            } else {
+                printError(520);
+                return false;
+            }
+        } else if (isLvalue()){
+            if (isAssign()){
+                if (isRvalue()){
+                    if (isRvalueTail()){
+                        return true;
+                    } else {
+                        printError(520);
+                        return false;
+                    }
+                } else {
+                    printError(521);
+                    return false;
+                }
+            }
+            if (isRvalueTail()){
+                return true;
+            } else {
+                printError(520);
+                return false;
+            }
+        } else if (isConstant(currentToken)) {
+            if (isRvalueTail()){
+                return true;
+            } else {
+                printError(520);
+                return false;
+            }
+        } else if (isUnary()){
+            if (isRvalue()){
+                if (isRvalueTail()){
+                    return true;
+                } else {
+                    printError(520);
+                    return false;
+                }
+            } else {
+                printError(520);
+                return false;
+            }
+        } else if (isAmpersand()){
+            if (isLvalue()){
+                if (isRvalueTail()){
+                    return true;
+                } else {
+                    printError(520);
+                    return false;
+                }
+            } else {
+                printError(521);
+                return false;
+            }
+        }
+        else {
+            return false;
+        }
+    }
+
+    private Boolean isRvalueTail(){
+        if (isBinary()){
+            if (isRvalue()){
+                return true;
+            }
+            else {
+                printError(520);
+                return false;
+            }
+        } else if (isLeftParenthesis(currentToken)){
+            if(isRightParenthesis(currentToken)){
+                return true;
+            } else if (isRvalue()){
+                if (isComma(currentToken)){
+                    while (isRvalue()){
+                        isComma(currentToken);
+                    }
+                    if (isRightParenthesis(currentToken)){
+                        return true;
+                    } else {
+                        printError(519);
+                        return false;
+                    }
+                } else if (isRightParenthesis(currentToken)){
+                    return true;
+                }
+                return true;
+            } else {
+                printErrorStack(new int[]{519, 520});
+                return false;
+            }
+        }
+        return true;
     }
 
     private void getNextToken(){
@@ -390,9 +496,110 @@ public class SyntacticalAnalysis {
             case 518 : return "Se espera cerradura de llave.";
             case 519 : return "Se espera cerradura de parentesis.";
             case 520 : return "Se espera bloque 'rvalue'.";
+            case 521 : return "Se espera bloque 'lvalue'.";
+            case 522 : return "Se espera bloque 'binary'.";
+            case 523 : return "Se espera signo de '='.";
 
         }
         return "";
+    }
+
+    private Boolean isBinary(){
+        int tableValue = currentToken.tableValue;
+        if  (
+                tableValue == 125 ||
+                tableValue == 110 ||
+                tableValue == 112 ||
+                tableValue == 109 ||
+                tableValue == 113 ||
+                tableValue == 114 ||
+                tableValue == 115 ||
+                tableValue == 116 ||
+                tableValue == 103 ||
+                tableValue == 104 ||
+                tableValue == 105 ||
+                tableValue == 102
+            )
+        {
+            getNextToken();
+            return true;
+        }
+        return false;
+    }
+
+    private Boolean isAmpersand(){
+        if (currentToken.tableValue == 110){
+            getNextToken();
+            return true;
+        }
+        return false;
+    }
+
+    private Boolean isLvalue(){
+        if (isName(currentToken)){
+            return true;
+        } else if (isAsterisk()) {
+            if (isRvalue()){
+                return true;
+            } else {
+                printError(520);
+                return false;
+            }
+        } /* else if (isRvalue()){
+            if (isLeftBracket(currentToken)){
+                if (isRvalue()){
+                    if (isRightBracket(currentToken)){
+                        return true;
+                    } else {
+                        printError(508);
+                        return false;
+                    }
+                } else {
+                    printError(520);
+                    return false;
+                }
+            } else {
+                printError(504);
+                return false;
+            }
+        }*/
+        return false;
+    }
+
+    private Boolean isAsterisk(){
+        if (currentToken.tableValue == 105){
+            getNextToken();
+            return true;
+        }
+        return false;
+    }
+
+    private Boolean isUnary(){
+        if (currentToken.tableValue == 103 || currentToken.tableValue == 108){
+            getNextToken();
+            return true;
+        }
+        return false;
+    }
+
+    private Boolean isAssign(){
+        if(isEqualsSign()){
+            if (isBinary()){
+                return true;
+            }
+            return true;
+        } else {
+            printError(523);
+            return false;
+        }
+    }
+
+    private Boolean isEqualsSign(){
+        if (currentToken.tableValue == 111){
+            getNextToken();
+            return true;
+        }
+        return false;
     }
 
     private Boolean isName(Token token){
