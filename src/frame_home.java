@@ -54,9 +54,10 @@ public class frame_home extends JFrame {
         btn_open.addActionListener(e -> selectFile());
         btn_read.addActionListener(e -> {
             txt_output.setText("");
-            lexicalAnalysis.generateTokens();
-            printTokenList();
-            SyntacticalAnalysis syntacticalAnalysis = new SyntacticalAnalysis();
+            if(lexicalAnalysis.generateTokens()){
+                printTokenList();
+                new SyntacticalAnalysis();
+            }
         });
     }
 

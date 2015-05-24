@@ -14,7 +14,7 @@ public class LexicalAnalysis {
         lexicalStatesTable = lexicalStatesTable.getInstance();
     }
 
-    public void generateTokens(){
+    public Boolean generateTokens(){
         tokenList = new LinkedList<>();
         int lineNumber = 1;
         int state = 0;
@@ -45,9 +45,10 @@ public class LexicalAnalysis {
                 lexeme = "";
             } else if (tableValue >= 500) {
                 printError(tableValue, lineNumber);
-                break;
+                return false;
             }
         }
+        return true;
     }
 
     private String checkAlphaDigit(char character){
