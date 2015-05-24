@@ -309,16 +309,19 @@ public class SyntacticalAnalysis {
                 printError(509);
                 return false;
             }
-        } else if (isRvalue()) {
+        }
+        else if (isSemiColon(currentToken)){
+            return true;
+        }
+        else if (isRvalue()) {
             if(isSemiColon(currentToken)){
                 return true;
             } else {
                 printError(509);
                 return false;
             }
-        } else if (isSemiColon(currentToken)){
-            return true;
-        } else {
+        }
+        else {
             printError(509);
             return false;
         }
@@ -369,7 +372,7 @@ public class SyntacticalAnalysis {
             if (isRvalueTail()){
                 return true;
             } else {
-                printError(523);
+                //printError(523);
                 return false;
             }
         } else if (isConstant(currentToken)) {
@@ -460,7 +463,8 @@ public class SyntacticalAnalysis {
     }
 
     private void printError(int error){
-        this.errorStack += "Error " + error + " en linea " + (currentToken.lineNumber-1) + ": " + getErrorMessage(error) + "\n";
+        this.errorStack += "Error " + error + " cerca de '" + (currentToken.lexeme) + "' en linea "
+                + currentToken.lineNumber + ": " + getErrorMessage(error) + "\n";
     }
 
     private String getErrorMessage(int errorNumber){
