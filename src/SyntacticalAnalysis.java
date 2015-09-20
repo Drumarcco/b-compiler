@@ -1,4 +1,5 @@
 import javax.swing.*;
+import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
 
@@ -10,12 +11,40 @@ public class SyntacticalAnalysis {
     private Token currentToken;
     private ListIterator<Token> listIterator;
     private String errorStack = "";
+    private LinkedList<Variable> variables;
 
     public SyntacticalAnalysis() {
+        variables = new LinkedList<>();
         listIterator = LexicalAnalysis.tokenList.listIterator();
         getNextToken();
         if (isProgram()) JOptionPane.showMessageDialog(null, "Sintaxis correcta.");
         else JOptionPane.showMessageDialog(null, errorStack);
+    }
+
+    private void addToVariablesList(Variable variable){
+        if (variableIsInList(variable.Name)){
+            printError(524);
+            return;
+        }
+        variables.add(variable);
+        getNextToken();
+    }
+
+    private void changeVariableType(Variable variable){
+        for (Variable var : variables){
+            if (var.Name == variable.Name) {
+                var.TypeTableNumber = variable.TypeTableNumber;
+                getNextToken();
+                return;
+            }
+        }
+    }
+
+    private boolean variableIsInList(String variableName) {
+        for (Variable variable : variables){
+            if (variable.Name == variableName) return true;
+        }
+        return false;
     }
 
     private Boolean isProgram(){
@@ -29,102 +58,29 @@ public class SyntacticalAnalysis {
 
     private Boolean isDefinition() {
         if (isName(currentToken) || isMain()) {
-            if (isLeftBracket(currentToken)) {
-                if (isConstant(currentToken)){
-                    if (isRightBracket(currentToken)){
-                        if (isIval(currentToken)) {
-                            while (isComma(currentToken)){
-                                if (!isIval(currentToken)){
-                                    printError(506);
-                                    return false;
-                                }
-                            }
-                            if (isSemiColon(currentToken)){
-                                return true;
-                            } else {
-                                printError(509);
-                                return false;
-                            }
-                        } else if (isSemiColon(currentToken)) {
-                            return true;
-                        } else {
-                            printError(509);
-                            return false;
-                        }
-                    } else {
-                        printError(508);
-                        return false;
-                    }
-                } else if (isRightBracket(currentToken)){
-                    if (isIval(currentToken)) {
-                        while(isComma(currentToken)){
-                            if (!isIval(currentToken)){
-                                printError(506);
-                                return false;
-                            }
-                        }
-                        if (isSemiColon(currentToken)) {
-                            return true;
-                        } else {
-                            printError(509);
-                            return false;
-                        }
-                    } else if (isSemiColon(currentToken)) {
-                        return true;
-                    } else {
-                        printError(509);
-                        return false;
-                    }
-                } else {
-                    printError(508);
-                    return false;
-                }
-            } else if (isLeftParenthesis(currentToken)){
+            if (isName(currentToken)) getNextToken();
+            if (isLeftParenthesis(currentToken)){
                 if (isName(currentToken)){
+                    getNextToken();
                     while (isComma(currentToken)){
                         if(!isName(currentToken)){
                             printError(503);
                             return false;
                         }
+                        getNextToken();
                     }
                     if (isRightParenthesis(currentToken)){
-                        if (isStatement()) {
-                            return true;
-                        } else {
-                            //printError(516);
-                            return false;
-                        }
+                        return isStatement();
                     } else {
                         printError(519);
                         return false;
                     }
                 } else if (isRightParenthesis(currentToken)){
-                    if (isStatement()) {
-                        return true;
-                    } else {
-                        //printError(516);
-                        return false;
-                    }
+                    return isStatement();
                 } else {
                     printError(519);
                     return false;
                 }
-            } else if(isIval(currentToken)){
-                while (isComma(currentToken)){
-                    if(!isIval(currentToken)){
-                        printError(506);
-                        return false;
-                    }
-                }
-                if (isSemiColon(currentToken)){
-                    return true;
-                } else {
-                    printError(509);
-                    return false;
-                }
-            }
-            else if (isSemiColon(currentToken)) {
-                return true;
             }
             else {
                 printError(509);
@@ -139,49 +95,48 @@ public class SyntacticalAnalysis {
     private Boolean isStatement(){
         if (isAuto(currentToken)){
             if (isName(currentToken)){
+                Variable variable = new Variable(currentToken.lexeme, 0);
+                addToVariablesList(variable);
                 if (isConstant(currentToken)){
+                    variable.TypeTableNumber = currentToken.tableValue;
+                    changeVariableType(variable);
                     while(isComma(currentToken)){
                         if (isName(currentToken)){
-                            isConstant(currentToken);
+                            variable = new Variable(currentToken.lexeme, 0);
+                            addToVariablesList(variable);
+                            if (isConstant(currentToken)){
+                                variable.TypeTableNumber = currentToken.tableValue;
+                                changeVariableType(variable);
+                            }
                         } else {
                             printError(503);
                             return false;
                         }
                     }
                     if (isSemiColon(currentToken)){
-                        if (isStatement()){
-                            return true;
-                        } else {
-                            //printError(516);
-                            return false;
-                        }
+                        return isStatement();
                     } else {
                         printError(509);
                         return false;
                     }
                 } else if (isSemiColon(currentToken)){
-                    if (isStatement()){
-                        return true;
-                    } else {
-                        //printError(516);
-                        return false;
-                    }
+                    return isStatement();
                 } else {
                     while (isComma(currentToken)){
                         if (isName(currentToken)){
-                            isConstant(currentToken);
+                            variable = new Variable(currentToken.lexeme, 0);
+                            addToVariablesList(variable);
+                            if (isConstant(currentToken)){
+                                variable.TypeTableNumber = currentToken.tableValue;
+                                changeVariableType(variable);
+                            }
                         } else {
                             printError(503);
                             return false;
                         }
                     }
                     if (isSemiColon(currentToken)){
-                        if (isStatement()){
-                            return true;
-                        } else {
-                            //printError(516);
-                            return false;
-                        }
+                        return isStatement();
                     } else {
                         printError(509);
                         return false;
@@ -193,19 +148,18 @@ public class SyntacticalAnalysis {
             }
         } else if (isExtrn(currentToken)){
             if (isName(currentToken)){
+                Variable variable = new Variable(currentToken.lexeme, 0);
+                addToVariablesList(variable);
                 while (isComma(currentToken)){
-                    if (!isName(currentToken)){
+                    if (isName(currentToken)) {
+                        addToVariablesList(variable);
+                    } else {
                         printError(503);
                         return false;
                     }
                 }
                 if (isSemiColon(currentToken)){
-                    if (isStatement()){
-                        return true;
-                    } else {
-                        //printError(516);
-                        return false;
-                    }
+                    return isStatement();
                 } else {
                     printError(509);
                     return false;
@@ -227,12 +181,7 @@ public class SyntacticalAnalysis {
                     if (isRightParenthesis(currentToken)){
                         if (isStatement()){
                             if (isElse(currentToken)) {
-                                if (isStatement()) {
-                                    return true;
-                                 } else {
-                                    //printError(516);
-                                    return false;
-                                }
+                                return isStatement();
                             } else {
                                 return true;
                             }
@@ -244,7 +193,6 @@ public class SyntacticalAnalysis {
                         return false;
                     }
                 } else {
-                    //printError(520);
                     return false;
                 }
             } else {
@@ -255,12 +203,7 @@ public class SyntacticalAnalysis {
             if (isLeftParenthesis(currentToken)){
                 if (isRvalue()){
                     if (isRightParenthesis(currentToken)){
-                        if (isStatement()){
-                            return true;
-                        } else {
-                            //printError(516);
-                            return false;
-                        }
+                        return isStatement();
                     } else {
                         printError(519);
                         return false;
@@ -341,69 +284,38 @@ public class SyntacticalAnalysis {
         if (isLeftParenthesis(currentToken)){
             if (isRvalue()){
                 if (isRightParenthesis(currentToken)){
-                    if (isRvalueTail()){
-                        return true;
-                    } else {
-                        //printError(520);
-                        return false;
-                    }
+                    return isRvalueTail();
                 } else {
                     printError(519);
                     return false;
                 }
             } else {
-                //printError(520);
                 return false;
             }
         } else if (isLvalue()){
             if (isAssign()){
                 if (isRvalue()){
-                    if (isRvalueTail()){
-                        return true;
-                    } else {
-                        //printError(520);
-                        return false;
-                    }
+                    return isRvalueTail();
                 } else {
                     printError(520);
                     return false;
                 }
             }
-            if (isRvalueTail()){
-                return true;
-            } else {
-                //printError(523);
-                return false;
-            }
+            return isRvalueTail();
         } else if (isConstant(currentToken)) {
-            if (isRvalueTail()){
-                return true;
-            } else {
-                //printError(520);
-                return false;
-            }
+            getNextToken();
+            return isRvalueTail();
         } else if (isUnary()){
             if (isRvalue()){
-                if (isRvalueTail()){
-                    return true;
-                } else {
-                    //printError(520);
-                    return false;
-                }
+                return isRvalueTail();
             } else {
                 printError(520);
                 return false;
             }
         } else if (isAmpersand()){
             if (isLvalue()){
-                if (isRvalueTail()){
-                    return true;
-                } else {
-                    //printError(520);
-                    return false;
-                }
+                return isRvalueTail();
             } else {
-                //printError(521);
                 return false;
             }
         }
@@ -454,17 +366,13 @@ public class SyntacticalAnalysis {
 
     }
 
-    private void printErrorStack(int[] errorList){
-        this.errorStack = "Errores de Sintáxis:\n";
-        for (int error : errorList){
-            this.errorStack += "- " + getErrorMessage(error) + "\n";
-        }
-        JOptionPane.showMessageDialog(null, this.errorStack);
-    }
-
     private void printError(int error){
-        this.errorStack += "Error " + error + " cerca de '" + (currentToken.lexeme) + "' en linea "
-                + currentToken.lineNumber + ": " + getErrorMessage(error) + "\n";
+        if (currentToken != null) {
+            this.errorStack += "Error " + error + " cerca de '" + currentToken.lexeme + "' linea "
+                    + currentToken.lineNumber + ": " + getErrorMessage(error) + "\n";
+        } else {
+            this.errorStack += "Error " + error + ": " + getErrorMessage(error) + "\n";
+        }
     }
 
     private String getErrorMessage(int errorNumber){
@@ -490,6 +398,7 @@ public class SyntacticalAnalysis {
             case 521 : return "Se espera bloque 'lvalue'.";
             case 522 : return "Se espera bloque 'binary'.";
             case 523 : return "Se espera signo de '='.";
+            case 524 : return "Variable ya declarada";
 
         }
         return "";
@@ -530,14 +439,10 @@ public class SyntacticalAnalysis {
 
     private Boolean isLvalue(){
         if (isName(currentToken)){
+            getNextToken();
             return true;
         } else if (isAsterisk()) {
-            if (isRvalue()){
-                return true;
-            } else {
-                //printError(520);
-                return false;
-            }
+            return isRvalue();
         }
         return false;
     }
@@ -588,7 +493,6 @@ public class SyntacticalAnalysis {
         if (token == null){
             return false;
         } else if (token.tableValue == 100){
-            getNextToken();
             return true;
         }
         return false;
@@ -618,7 +522,6 @@ public class SyntacticalAnalysis {
         if (token == null) {
             return false;
         } else if (token.tableValue == 101 || token.tableValue == 106 || token.tableValue == 107) {
-            getNextToken();
             return true;
         }
         return false;
@@ -687,7 +590,10 @@ public class SyntacticalAnalysis {
     private Boolean isIval(Token token){
         if (token == null){
             return false;
-        } else if (isConstant(token) || isName(token)) return true;
+        } else if (isConstant(token) || isName(token)){
+            getNextToken();
+            return true;
+        }
         return false;
     }
 
