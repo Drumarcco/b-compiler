@@ -1,3 +1,5 @@
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+
 import javax.swing.*;
 import java.util.LinkedList;
 import java.util.ListIterator;
@@ -12,6 +14,7 @@ public class SyntacticalAnalysis {
     private ListIterator<Token> listIterator;
     private String errorStack = "";
     private LinkedList<Variable> variables;
+    private LinkedList<Token> operationTokenList;
 
     public SyntacticalAnalysis() {
         variables = new LinkedList<>();
@@ -19,6 +22,15 @@ public class SyntacticalAnalysis {
         getNextToken();
         if (isProgram()) JOptionPane.showMessageDialog(null, "Sintaxis correcta.");
         else JOptionPane.showMessageDialog(null, errorStack);
+    }
+
+    private void addToOperationList(Token token){
+        operationTokenList.add(token);
+        getNextToken();
+    }
+
+    private void EvaluateOperation() {
+        operationTokenList = null;
     }
 
     private void addToVariablesList(Variable variable){
@@ -60,6 +72,7 @@ public class SyntacticalAnalysis {
         if (isName(currentToken) || isMain()) {
             if (isName(currentToken)) getNextToken();
             if (isLeftParenthesis(currentToken)){
+                getNextToken();
                 if (isName(currentToken)){
                     getNextToken();
                     while (isComma(currentToken)){
@@ -70,12 +83,14 @@ public class SyntacticalAnalysis {
                         getNextToken();
                     }
                     if (isRightParenthesis(currentToken)){
+                        getNextToken();
                         return isStatement();
                     } else {
                         printError(519);
                         return false;
                     }
                 } else if (isRightParenthesis(currentToken)){
+                    getNextToken();
                     return isStatement();
                 } else {
                     printError(519);
@@ -177,8 +192,10 @@ public class SyntacticalAnalysis {
             return false;
         } else if (isIf(currentToken)) {
             if (isLeftParenthesis(currentToken)){
+                getNextToken();
                 if (isRvalue()){
                     if (isRightParenthesis(currentToken)){
+                        getNextToken();
                         if (isStatement()){
                             if (isElse(currentToken)) {
                                 return isStatement();
@@ -201,8 +218,10 @@ public class SyntacticalAnalysis {
             }
         } else if (isWhile(currentToken)){
             if (isLeftParenthesis(currentToken)){
+                getNextToken();
                 if (isRvalue()){
                     if (isRightParenthesis(currentToken)){
+                        getNextToken();
                         return isStatement();
                     } else {
                         printError(519);
@@ -230,8 +249,10 @@ public class SyntacticalAnalysis {
             }
         } else if (isReturn(currentToken)){
             if (isLeftParenthesis(currentToken)){
+                getNextToken();
                 if (isRvalue()){
                     if (isRightParenthesis(currentToken)){
+                        getNextToken();
                         if(isSemiColon(currentToken)){
                             return true;
                         } else {
@@ -257,6 +278,7 @@ public class SyntacticalAnalysis {
             return true;
         }
         else if (isRvalue()) {
+            EvaluateOperation();
             if(isSemiColon(currentToken)){
                 return true;
             } else {
@@ -281,9 +303,12 @@ public class SyntacticalAnalysis {
     }
 
     private Boolean isRvalue(){
+        if (operationTokenList == null) operationTokenList = new LinkedList<>();
         if (isLeftParenthesis(currentToken)){
+            addToOperationList(currentToken);
             if (isRvalue()){
                 if (isRightParenthesis(currentToken)){
+                    addToOperationList(currentToken);
                     return isRvalueTail();
                 } else {
                     printError(519);
@@ -303,16 +328,22 @@ public class SyntacticalAnalysis {
             }
             return isRvalueTail();
         } else if (isConstant(currentToken)) {
-            getNextToken();
+            addToOperationList(currentToken);
             return isRvalueTail();
-        } else if (isUnary()){
-            if (isRvalue()){
-                return isRvalueTail();
-            } else {
-                printError(520);
-                return false;
-            }
-        } else if (isAmpersand()){
+        }
+//        else if (isUnary()){
+//            if (isRvalue()){
+//                return isRvalueTail();
+//            } else {
+//                printError(520);
+//                return false;
+//            }
+//        }
+        else if (isConstant(currentToken)){
+            addToOperationList(currentToken);
+            return isRvalueTail();
+        }
+        else if (isAmpersand()){
             if (isLvalue()){
                 return isRvalueTail();
             } else {
@@ -326,6 +357,7 @@ public class SyntacticalAnalysis {
 
     private Boolean isRvalueTail(){
         if (isBinary()){
+            addToOperationList(currentToken);
             if (isRvalue()){
                 return true;
             }
@@ -334,7 +366,9 @@ public class SyntacticalAnalysis {
                 return false;
             }
         } else if (isLeftParenthesis(currentToken)){
+            addToOperationList(currentToken);
             if(isRightParenthesis(currentToken)){
+                addToOperationList(currentToken);
                 return true;
             } else if (isRvalue()){
                 while (isComma(currentToken)){
@@ -344,6 +378,7 @@ public class SyntacticalAnalysis {
                     }
                 }
                 if (isRightParenthesis(currentToken)){
+                    addToOperationList(currentToken);
                     return true;
                 } else {
                     printError(519);
@@ -406,8 +441,7 @@ public class SyntacticalAnalysis {
 
     private Boolean isBinary(){
         int tableValue = currentToken.tableValue;
-        if  (
-                tableValue == 125 ||
+        return tableValue == 125 ||
                 tableValue == 110 ||
                 tableValue == 112 ||
                 tableValue == 109 ||
@@ -418,13 +452,7 @@ public class SyntacticalAnalysis {
                 tableValue == 103 ||
                 tableValue == 104 ||
                 tableValue == 105 ||
-                tableValue == 102
-            )
-        {
-            getNextToken();
-            return true;
-        }
-        return false;
+                tableValue == 102;
     }
 
     private Boolean isAmpersand(){
@@ -439,19 +467,7 @@ public class SyntacticalAnalysis {
 
     private Boolean isLvalue(){
         if (isName(currentToken)){
-            getNextToken();
-            return true;
-        } else if (isAsterisk()) {
-            return isRvalue();
-        }
-        return false;
-    }
-
-    private Boolean isAsterisk(){
-        if (currentToken == null){
-            return false;
-        } else if (currentToken.tableValue == 105){
-            getNextToken();
+            addToOperationList(currentToken);
             return true;
         }
         return false;
@@ -469,9 +485,7 @@ public class SyntacticalAnalysis {
 
     private Boolean isAssign(){
         if(isEqualsSign()){
-            if (isBinary()){
-                return true;
-            }
+            addToOperationList(currentToken);
             return true;
         } else {
             //printError(523);
@@ -483,7 +497,6 @@ public class SyntacticalAnalysis {
         if (currentToken == null){
             return false;
         } else if (currentToken.tableValue == 111){
-            getNextToken();
             return true;
         }
         return false;
@@ -587,16 +600,6 @@ public class SyntacticalAnalysis {
         return false;
     }
 
-    private Boolean isIval(Token token){
-        if (token == null){
-            return false;
-        } else if (isConstant(token) || isName(token)){
-            getNextToken();
-            return true;
-        }
-        return false;
-    }
-
     private Boolean isComma(Token token){
         if (token == null){
             return false;
@@ -621,7 +624,6 @@ public class SyntacticalAnalysis {
         if (token == null){
             return false;
         } else if (token.tableValue == 119){
-            getNextToken();
             return true;
         }
         return false;
@@ -631,7 +633,6 @@ public class SyntacticalAnalysis {
         if (token == null) {
             return false;
         } else if (token.tableValue == 120){
-            getNextToken();
             return true;
         }
         return false;
