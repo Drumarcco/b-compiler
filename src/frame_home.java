@@ -1,3 +1,7 @@
+import lexis.LexicalAnalysis;
+import lexis.Token;
+import syntax.SyntacticalAnalysis;
+
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -100,7 +104,7 @@ public class frame_home extends JFrame {
     private void printTokenList(){
         txt_output.setText("");
         for(Token token : lexicalAnalysis.tokenList){
-            String line = "Token: ";
+            String line = "lexis.Token: ";
             line += token.tableValue + " ";
             line += token.lineNumber + " ";
             line += token.lexeme;

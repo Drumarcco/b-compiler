@@ -1,3 +1,5 @@
+package lexis;
+
 import java.util.HashMap;
 
 /**

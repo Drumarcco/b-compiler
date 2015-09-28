@@ -1,9 +1,14 @@
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
+package syntax;
+
+import lexis.LexicalAnalysis;
+import lexis.Token;
+import parsing.ASTNode;
+import parsing.BaseOperator;
+import parsing.Operator;
+import parsing.ShuntingYardParser;
 
 import javax.swing.*;
-import java.util.LinkedList;
-import java.util.ListIterator;
-import java.util.NoSuchElementException;
+import java.util.*;
 
 /**
  * Created by drumarcco on 20/05/15.
@@ -15,13 +20,26 @@ public class SyntacticalAnalysis {
     private String errorStack = "";
     private LinkedList<Variable> variables;
     private LinkedList<Token> operationTokenList;
+    private ShuntingYardParser parser;
 
     public SyntacticalAnalysis() {
         variables = new LinkedList<>();
         listIterator = LexicalAnalysis.tokenList.listIterator();
+        initializeParser();
         getNextToken();
         if (isProgram()) JOptionPane.showMessageDialog(null, "Sintaxis correcta.");
         else JOptionPane.showMessageDialog(null, errorStack);
+    }
+
+    private void initializeParser() {
+        final Collection<Operator> operators = new ArrayList<>();
+        operators.add(new BaseOperator("*", false, 15));
+        operators.add(new BaseOperator("/", false, 15));
+        operators.add(new BaseOperator("+", false, 6));
+        operators.add(new BaseOperator("-", false, 6));
+        operators.add(new BaseOperator("=", true, 5));
+
+        parser = new ShuntingYardParser(operators);
     }
 
     private void addToOperationList(Token token){
@@ -29,8 +47,10 @@ public class SyntacticalAnalysis {
         getNextToken();
     }
 
-    private void EvaluateOperation() {
-        operationTokenList = null;
+    private void evaluateOperation() {
+        ASTNode parseTree = parser.convertInfixNotationToAST(operationTokenList);
+        String hola ="";
+        return;
     }
 
     private void addToVariablesList(Variable variable){
@@ -193,7 +213,8 @@ public class SyntacticalAnalysis {
         } else if (isIf(currentToken)) {
             if (isLeftParenthesis(currentToken)){
                 getNextToken();
-                if (isRvalue()){
+                if (isBoolean()){
+                    evaluateOperation();
                     if (isRightParenthesis(currentToken)){
                         getNextToken();
                         if (isStatement()){
@@ -219,7 +240,8 @@ public class SyntacticalAnalysis {
         } else if (isWhile(currentToken)){
             if (isLeftParenthesis(currentToken)){
                 getNextToken();
-                if (isRvalue()){
+                if (isBoolean()){
+                    evaluateOperation();
                     if (isRightParenthesis(currentToken)){
                         getNextToken();
                         return isStatement();
@@ -278,7 +300,7 @@ public class SyntacticalAnalysis {
             return true;
         }
         else if (isRvalue()) {
-            EvaluateOperation();
+            evaluateOperation();
             if(isSemiColon(currentToken)){
                 return true;
             } else {
@@ -290,6 +312,37 @@ public class SyntacticalAnalysis {
             printError(509);
             return false;
         }
+    }
+
+    private Boolean isBoolean(){
+        if (isRvalue()){
+            if (isComparator()){
+                addToOperationList(currentToken);
+                if (isRvalue()){
+                   if (isAndOr()){
+                       addToOperationList(currentToken);
+                       return isBoolean();
+                   }
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private Boolean isComparator(){
+        int tableValue = currentToken.tableValue;
+        return tableValue == 112 ||
+                tableValue == 109 ||
+                tableValue == 113 ||
+                tableValue == 114 ||
+                tableValue == 115 ||
+                tableValue == 116;
+    }
+
+    private Boolean isAndOr(){
+        int tableValue = currentToken.tableValue;
+        return tableValue == 125 || tableValue == 110;
     }
 
     private Boolean isMain(){
@@ -433,7 +486,7 @@ public class SyntacticalAnalysis {
             case 521 : return "Se espera bloque 'lvalue'.";
             case 522 : return "Se espera bloque 'binary'.";
             case 523 : return "Se espera signo de '='.";
-            case 524 : return "Variable ya declarada";
+            case 524 : return "syntax.Variable ya declarada";
 
         }
         return "";
@@ -441,15 +494,7 @@ public class SyntacticalAnalysis {
 
     private Boolean isBinary(){
         int tableValue = currentToken.tableValue;
-        return tableValue == 125 ||
-                tableValue == 110 ||
-                tableValue == 112 ||
-                tableValue == 109 ||
-                tableValue == 113 ||
-                tableValue == 114 ||
-                tableValue == 115 ||
-                tableValue == 116 ||
-                tableValue == 103 ||
+        return  tableValue == 103 ||
                 tableValue == 104 ||
                 tableValue == 105 ||
                 tableValue == 102;
