@@ -27,7 +27,7 @@ public class SyntacticalAnalysis {
         listIterator = LexicalAnalysis.tokenList.listIterator();
         initializeParser();
         getNextToken();
-        if (isProgram()) JOptionPane.showMessageDialog(null, "Sintaxis correcta.");
+        if (isProgram() && errorStack.equals("")) JOptionPane.showMessageDialog(null, "Sintaxis correcta.");
         else JOptionPane.showMessageDialog(null, errorStack);
     }
 
@@ -35,9 +35,17 @@ public class SyntacticalAnalysis {
         final Collection<Operator> operators = new ArrayList<>();
         operators.add(new BaseOperator("*", false, 15));
         operators.add(new BaseOperator("/", false, 15));
-        operators.add(new BaseOperator("+", false, 6));
-        operators.add(new BaseOperator("-", false, 6));
-        operators.add(new BaseOperator("=", true, 5));
+        operators.add(new BaseOperator("+", false, 7));
+        operators.add(new BaseOperator("-", false, 7));
+        operators.add(new BaseOperator("<", false, 6));
+        operators.add(new BaseOperator("<=", false, 6));
+        operators.add(new BaseOperator(">", false, 6));
+        operators.add(new BaseOperator(">=", false, 6));
+        operators.add(new BaseOperator("==", false, 5));
+        operators.add(new BaseOperator("!=", false, 5));
+        operators.add(new BaseOperator("&", false, 4));
+        operators.add(new BaseOperator("|", false, 4));
+        operators.add(new BaseOperator("=", true, 3));
 
         parser = new ShuntingYardParser(operators);
     }
@@ -49,8 +57,65 @@ public class SyntacticalAnalysis {
 
     private void evaluateOperation() {
         ASTNode parseTree = parser.convertInfixNotationToAST(operationTokenList);
-        String hola ="";
-        return;
+        int type = evaluateAST(parseTree);
+        if (type == 0){
+            printError(525);
+        }
+    }
+
+    private int evaluateAST(ASTNode tree){
+        /**
+         * Type 100: Variable
+         * Type 101: Number
+         * Type 106: Char
+         * Type 107: String**/
+        int typeLeft, typeRight;
+
+        switch (tree.getValue().tableValue){
+            case 100:   // variable
+                if (getType(tree) == 0) printError(526);
+                return getType(tree);
+            case 102:   // /
+            case 103:   // -
+            case 105:   // *
+                typeLeft = evaluateAST(tree.getLeftASTNode());
+                typeRight = evaluateAST(tree.getRightASTNode());
+                if (typeLeft == typeRight && typeLeft == 101) return 101;
+                else return 0;
+            case 104:   // +
+                typeLeft = evaluateAST(tree.getLeftASTNode());
+                typeRight = evaluateAST(tree.getRightASTNode());
+                if (typeLeft == typeRight){
+                    if (typeLeft == 101) return 101;
+                    else if (typeLeft == 106 || typeLeft == 107) return 107;
+                    else return 0;
+                } else {
+                    if ((typeLeft == 106 && typeRight == 107)
+                            || (typeLeft == 107 && typeRight == 106)) return 107;
+                    else return 0;
+                }
+            case 111:   // =
+                typeRight = evaluateAST(tree.getRightASTNode());
+                Variable variable = new Variable(tree.getLeftASTNode().getValue().lexeme, typeRight);
+                changeVariableType(variable);
+                return typeRight;
+            default:
+                return tree.getValue().tableValue;
+        }
+    }
+
+    private int getType(ASTNode operand){
+        if (operand.getValue().tableValue == 100){
+            return getCurrentType(operand.getValue().lexeme);
+        }
+        return operand.getValue().tableValue;
+    }
+
+    private int getCurrentType(String variableName){
+        for (Variable v : variables){
+            if (v.Name.equals(variableName)) return v.TypeTableNumber;
+        }
+        return 0;
     }
 
     private void addToVariablesList(Variable variable){
@@ -64,7 +129,7 @@ public class SyntacticalAnalysis {
 
     private void changeVariableType(Variable variable){
         for (Variable var : variables){
-            if (var.Name == variable.Name) {
+            if (Objects.equals(var.Name, variable.Name)) {
                 var.TypeTableNumber = variable.TypeTableNumber;
                 getNextToken();
                 return;
@@ -74,7 +139,14 @@ public class SyntacticalAnalysis {
 
     private boolean variableIsInList(String variableName) {
         for (Variable variable : variables){
-            if (variable.Name == variableName) return true;
+            if (Objects.equals(variable.Name, variableName)) return true;
+        }
+        return false;
+    }
+
+    private boolean variableIsDeclared(String variableName){
+        for (Variable variable : variables){
+            if (variable.Name.equals(variableName)) return true;
         }
         return false;
     }
@@ -486,7 +558,10 @@ public class SyntacticalAnalysis {
             case 521 : return "Se espera bloque 'lvalue'.";
             case 522 : return "Se espera bloque 'binary'.";
             case 523 : return "Se espera signo de '='.";
-            case 524 : return "syntax.Variable ya declarada";
+            case 524 : return "Variable ya declarada";
+            case 525 : return "Tipos incompatibles";
+            case 526 : return "Variable no inicializada";
+            case 527 : return "Variable no declarada";
 
         }
         return "";
@@ -512,6 +587,7 @@ public class SyntacticalAnalysis {
 
     private Boolean isLvalue(){
         if (isName(currentToken)){
+            if (!variableIsDeclared(currentToken.lexeme)) printError(527);
             addToOperationList(currentToken);
             return true;
         }
