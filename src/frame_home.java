@@ -103,7 +103,7 @@ public class frame_home extends JFrame {
 
     private void printTokenList(){
         txt_output.setText("");
-        for(Token token : lexicalAnalysis.tokenList){
+        for(Token token : LexicalAnalysis.tokenList){
             String line = "lexis.Token: ";
             line += token.tableValue + " ";
             line += token.lineNumber + " ";

@@ -65,6 +65,8 @@ public class SyntacticalAnalysis {
 
     private int evaluateAST(ASTNode tree){
         /**
+         * Type 0: Incompatible types
+         * Type 1: boolean
          * Type 100: Variable
          * Type 101: Number
          * Type 106: Char
@@ -99,6 +101,26 @@ public class SyntacticalAnalysis {
                 Variable variable = new Variable(tree.getLeftASTNode().getValue().lexeme, typeRight);
                 changeVariableType(variable);
                 return typeRight;
+            case 125: // |
+            case 110: // &
+                typeLeft = evaluateAST(tree.getLeftASTNode());
+                typeRight = evaluateAST(tree.getRightASTNode());
+                if (typeLeft == typeRight && typeLeft == 1) return typeLeft;
+                else return 0;
+            case 109: // !=
+            case 112: // ==
+                typeLeft = evaluateAST(tree.getLeftASTNode());
+                typeRight = evaluateAST(tree.getRightASTNode());
+                if (typeLeft == typeRight) return 1;
+                else return 0;
+            case 113: // <
+            case 114: // <=
+            case 115: // >
+            case 116: // >=
+                typeLeft = evaluateAST(tree.getLeftASTNode());
+                typeRight = evaluateAST(tree.getRightASTNode());
+                if (typeLeft == typeRight && typeLeft == 101) return 1;
+                else return 0;
             default:
                 return tree.getValue().tableValue;
         }
@@ -131,7 +153,6 @@ public class SyntacticalAnalysis {
         for (Variable var : variables){
             if (Objects.equals(var.Name, variable.Name)) {
                 var.TypeTableNumber = variable.TypeTableNumber;
-                getNextToken();
                 return;
             }
         }
@@ -207,6 +228,7 @@ public class SyntacticalAnalysis {
                 if (isConstant(currentToken)){
                     variable.TypeTableNumber = currentToken.tableValue;
                     changeVariableType(variable);
+                    getNextToken();
                     while(isComma(currentToken)){
                         if (isName(currentToken)){
                             variable = new Variable(currentToken.lexeme, 0);
@@ -214,6 +236,7 @@ public class SyntacticalAnalysis {
                             if (isConstant(currentToken)){
                                 variable.TypeTableNumber = currentToken.tableValue;
                                 changeVariableType(variable);
+                                getNextToken();
                             }
                         } else {
                             printError(503);
@@ -236,6 +259,7 @@ public class SyntacticalAnalysis {
                             if (isConstant(currentToken)){
                                 variable.TypeTableNumber = currentToken.tableValue;
                                 changeVariableType(variable);
+                                getNextToken();
                             }
                         } else {
                             printError(503);
@@ -456,14 +480,14 @@ public class SyntacticalAnalysis {
             addToOperationList(currentToken);
             return isRvalueTail();
         }
-//        else if (isUnary()){
-//            if (isRvalue()){
-//                return isRvalueTail();
-//            } else {
-//                printError(520);
-//                return false;
-//            }
-//        }
+        else if (isUnary()){
+            if (isRvalue()){
+                return isRvalueTail();
+            } else {
+                printError(520);
+                return false;
+            }
+        }
         else if (isConstant(currentToken)){
             addToOperationList(currentToken);
             return isRvalueTail();
