@@ -9,6 +9,8 @@ import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.*;
+import java.util.concurrent.PriorityBlockingQueue;
+import java.util.stream.Collectors;
 
 /**
  * Created by Marco on 12/12/2015.
@@ -17,6 +19,10 @@ public class AssemblerBuilder {
 	private LinkedList<Variable> variables;
 	private ArrayList<Object> program;
 	private StringBuilder s;
+	private PriorityBlockingQueue<Variable> temporals;
+	private int currentTemporal = 0;
+	private Object currentObject;
+	private ListIterator<Object> iterator;
 
 	final String CODE_PREVARS =
 			";/StartHeader\n" +
@@ -62,8 +68,37 @@ public class AssemblerBuilder {
 	public AssemblerBuilder(ArrayList<Object> program, LinkedList<Variable> variables) {
 		this.variables = variables;
 		this.program = program;
+		generateTemporals();
+		iterator = program.listIterator();
+		iterator.next();
 		this.s = new StringBuilder();
+	}
 
+	private void generateTemporals() {
+		temporals = new PriorityBlockingQueue<>();
+		for (Object obj : program) {
+			if (!(obj instanceof Token)) continue;
+			Token token = (Token) obj;
+			if (!isOperator(token)) continue;
+			temporals.put(new Variable("T" + currentTemporal, 101));
+			currentTemporal++;
+		}
+		variables.addAll(temporals.stream().collect(Collectors.toList()));
+	}
+
+	private boolean isOperator(Token token) {
+		switch (token.lexeme) {
+			case "*":
+				return true;
+			case "/":
+				return true;
+			case "+":
+				return true;
+			case "-":
+				return true;
+			default:
+				return false;
+		}
 	}
 
 	public void processProgram() {
@@ -91,8 +126,7 @@ public class AssemblerBuilder {
 				Token token = (Token) obj;
 				switch (token.lexeme) {
 					case "*":
-						o2 = computation.pop();
-						o1 = computation.pop();
+
 						break;
 					case "/":
 						o2 = computation.pop();
@@ -134,31 +168,26 @@ public class AssemblerBuilder {
 			Variable v1 = (Variable) o1;
 			s.append("\tSUMAR\t").append(v1.Name).append(",\tTEMPORAL")
 					.append(",\t").append("TEMPORAL\n\n");
-		}
-		else if (o2 == null && o1 instanceof Token) {
+		} else if (o2 == null && o1 instanceof Token) {
 			Token t1 = (Token) o1;
 			s.append("\tSUMAR\t").append(t1.lexeme).append(",\tTEMPORAL")
 					.append(",\t").append("TEMPORAL\n\n");
-		}
-		else if (o1 instanceof Variable && o2 instanceof Variable) {
+		} else if (o1 instanceof Variable && o2 instanceof Variable) {
 			Variable v1 = (Variable) o1;
 			Variable v2 = (Variable) o2;
 			s.append("\tSUMAR\t").append(v1.Name).append(",\t").append(v2.Name)
-						.append(",\t").append("TEMPORAL\n\n");
-		}
-		else if (o1 instanceof Variable && o2 instanceof Token) {
+					.append(",\t").append("TEMPORAL\n\n");
+		} else if (o1 instanceof Variable && o2 instanceof Token) {
 			Variable v1 = (Variable) o1;
 			Token t2 = (Token) o2;
 			s.append("\tSUMAR\t").append(v1.Name).append(",\t").append(t2.lexeme)
 					.append(",\t").append("TEMPORAL\n\n");
-		}
-		else if (o1 instanceof Token && o2 instanceof Variable) {
+		} else if (o1 instanceof Token && o2 instanceof Variable) {
 			Token t1 = (Token) o1;
 			Variable v2 = (Variable) o2;
 			s.append("\tSUMAR\t").append(t1.lexeme).append(",\t").append(v2.Name)
 					.append(",\t").append("TEMPORAL\n\n");
-		}
-		else if (o1 instanceof Token && o2 instanceof Token) {
+		} else if (o1 instanceof Token && o2 instanceof Token) {
 			Token t1 = (Token) o1;
 			Token t2 = (Token) o2;
 			s.append("\tSUMAR\t").append(t1.lexeme).append(",\t").append(t2.lexeme)
@@ -172,25 +201,22 @@ public class AssemblerBuilder {
 			if (token.tableValue == 101) {
 				s.append("\tMOV\tAX,\t").append(token.lexeme).append("\n");
 				s.append("\tCALL\tPRINT_NUM\n\n");
-			}
-			else if (token.tableValue == 107) {
+			} else if (token.tableValue == 107) {
 				s.append("\tPRINTN\t").append(token.lexeme).append("\n\n");
-			}
-			else {
+			} else {
 				if (function.Name.toLowerCase().equals("write")) {
 					s.append("\tMOV\tTEMPORAL,\t").append(token.lexeme).append("\n")
 							.append("\tWRITE\tTEMPORAL").append("\n\n");
 				}
 			}
-		}
-		else if (obj instanceof Variable){
+		} else if (obj instanceof Variable) {
 			Variable var = (Variable) obj;
 			if (function.Name.toLowerCase().equals("write")) {
 				if (var.TypeTableNumber == 101) {
 					s.append("\tMOV\tAX,\t").append(var.Name).append("\n")
-								.append("\tCALL\tPRINT_NUM").append("\n\n");
+							.append("\tCALL\tPRINT_NUM").append("\n\n");
 				} else
-				s.append("\tWRITE\t").append(var.Name).append("\n\n");
+					s.append("\tWRITE\t").append(var.Name).append("\n\n");
 			}
 		}
 	}
@@ -206,13 +232,11 @@ public class AssemblerBuilder {
 		v1 = (Variable) o1;
 		if (o2 == null) {
 			s.append("\tI_ASIGNAR\t").append(v1.Name).append(",\t").append("TEMPORAL\n\n");
-		}
-		else if (o2 instanceof Token) {
+		} else if (o2 instanceof Token) {
 			t2 = (Token) o2;
 			s.append("\tMOV\tTEMPORAL,\t").append(t2.lexeme).append("\n")
 					.append("\tI_ASIGNAR\t").append(v1.Name).append(",\t").append("TEMPORAL\n\n");
-		}
-		else if (o2 instanceof Variable) {
+		} else if (o2 instanceof Variable) {
 			v2 = (Variable) o2;
 			s.append("\tI_ASIGNAR\t").append(v1.Name).append(",\t").append(v2.Name).append("\n\n");
 		}

@@ -15,21 +15,27 @@ public class AssemblerBuilderTest {
 
 	@BeforeClass
 	public static void initialize() {
+		Variable var1 = new Variable("var1", 101);
+		Variable var2 = new Variable("var2", 102);
+
 		LinkedList<Variable> variables = new LinkedList<>();
-		variables.add(new Variable("var1", 101));
-		variables.add(new Variable("var2", 102));
-		variables.add(new Variable("var3", 101));
+		variables.add(var1);
+		variables.add(var2);
 
 		ArrayList<Object> program = new ArrayList<>();
-		program.add(new Variable("var1", 100));
+		program.add(var1);
 		program.add(new Token("'s'", 107, 1));
 		program.add(new Token("=", 111, 1));
-		program.add(new Variable("var2", 100));
+		program.add(var2);
 		program.add(new Token("5", 101, 1));
 		program.add(new Token("=", 111, 1));
-		program.add(new Variable("var1", 100));
-		program.add(new Variable("var2", 100));
+		program.add(var1);
+		program.add(var2);
 		program.add(new Token("=", 111, 1));
+		program.add(var1);
+		program.add(new Token("5", 101, 1));
+		program.add(new Token("+", 100, 1));
+
 		assembler = new AssemblerBuilder(program, variables);
 	}
 
