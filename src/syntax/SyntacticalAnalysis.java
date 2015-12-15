@@ -486,6 +486,7 @@ public class SyntacticalAnalysis {
 		if (operationTokenList == null) operationTokenList = new LinkedList<>();
 		if (programList == null) programList = new ArrayList<>();
 		if (isLeftParenthesis(currentToken)) {
+			addToProgramList(currentToken);
 			addToOperationList(currentToken);
 			if (isRvalue()) {
 				if (isRightParenthesis(currentToken)) {

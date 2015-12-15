@@ -9,6 +9,8 @@ import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.stream.Collectors;
 
@@ -19,10 +21,10 @@ public class AssemblerBuilder {
 	private LinkedList<Variable> variables;
 	private ArrayList<Object> program;
 	private StringBuilder s;
-	private PriorityBlockingQueue<Variable> temporals;
+	private LinkedBlockingQueue<Variable> temporals;
+	private Variable queuedTemporal = null;
 	private int currentTemporal = 0;
-	private Object currentObject;
-	private ListIterator<Object> iterator;
+	final Stack<Object> computation = new Stack<>();
 
 	final String CODE_PREVARS =
 			";/StartHeader\n" +
@@ -30,21 +32,6 @@ public class AssemblerBuilder {
 					"INCLUDE emu8086.inc\n" +
 					".MODEL SMALL\n" +
 					".DATA\n" +
-//					"\tBUFFER\t\tDB 8 DUP('$')  ;23h\n" +
-//					"\tBUFFERTEMP\tDB 8 DUP('$')  ;23h\n" +
-//					"\tBLANCO\tDB '#'\n" +
-//					"\tBLANCOS\tDB '$'\n" +
-//					"\tMENOS\tDB '-$'\n" +
-//					"\tCOUNT\tDW 0\n" +
-//					"\tNEGATIVO\tDB 0\n" +
-//					"\tARREGLO\tDW 0\n" +
-//					"\tARREGLO1\tDW 0\n" +
-//					"\tARREGLO2\tDW 0\n" +
-//					"\tLISTAPAR\tLABEL BYTE\n" +
-//					"\tLONGMAX\tDB 254\n" +
-//					"\tTOTCAR\tDB ?\n" +
-//					"\tINTRODUCIDOS\tDB 254 DUP ('$')\n" +
-//					"\tMULT10\tDW 1\n" +
 					"\tTEMPORAL\tDW ?\n";
 
 	final String CODE_POSTVARS =
@@ -69,19 +56,21 @@ public class AssemblerBuilder {
 		this.variables = variables;
 		this.program = program;
 		generateTemporals();
-		iterator = program.listIterator();
-		iterator.next();
 		this.s = new StringBuilder();
 	}
 
 	private void generateTemporals() {
-		temporals = new PriorityBlockingQueue<>();
+		temporals = new LinkedBlockingQueue<>();
 		for (Object obj : program) {
 			if (!(obj instanceof Token)) continue;
 			Token token = (Token) obj;
 			if (!isOperator(token)) continue;
-			temporals.put(new Variable("T" + currentTemporal, 101));
-			currentTemporal++;
+			try {
+				temporals.put(new Variable("T" + currentTemporal, 101));
+				currentTemporal++;
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
 		variables.addAll(temporals.stream().collect(Collectors.toList()));
 	}
@@ -105,12 +94,16 @@ public class AssemblerBuilder {
 		s.append(CODE_PREVARS);
 		s.append(parseVariables());
 		s.append(CODE_POSTVARS);
-		iterateList();
+		try {
+			iterateList();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		s.append(CODE_FOOTER);
 		writeFile(s.toString());
 	}
 
-	private void iterateList() {
+	private void iterateList() throws Exception {
 		/**
 		 * Type 0: Incompatible types
 		 * Type 1: boolean
@@ -118,41 +111,51 @@ public class AssemblerBuilder {
 		 * Type 101: Number
 		 * Type 106: Char
 		 * Type 107: String**/
-		final Stack<Object> computation = new Stack<>();
 		for (Object obj : program) {
 			Object o1 = null;
 			Object o2 = null;
+			Variable temp = null;
 			if (obj instanceof Token) {
 				Token token = (Token) obj;
 				switch (token.lexeme) {
 					case "*":
-
+						temp = temporals.poll();
+						o2 = computation.pop();
+						o1 = queuedTemporal == null ? computation.pop() : queuedTemporal;
+						multiplication(o1, o2, temp);
 						break;
 					case "/":
+						temp = temporals.poll();
 						o2 = computation.pop();
-						o1 = computation.pop();
+						o1 = queuedTemporal == null ? computation.pop() : queuedTemporal;
+						division(o1, o2, temp);
 						break;
 					case "+":
-						if (computation.size() > 1) o2 = computation.pop();
-						o1 = computation.pop();
-						addition(o1, o2);
+						temp = temporals.poll();
+						o2 = computation.pop();
+						o1 = queuedTemporal == null ? computation.pop() : queuedTemporal;
+						addition(o1, o2, temp);
 						break;
 					case "-":
+						temp = temporals.poll();
 						o2 = computation.pop();
-						o1 = computation.pop();
+						o1 = queuedTemporal == null ? computation.pop() : queuedTemporal;
+						subtraction(o1, o2, temp);
 						break;
 					case "=":
-						if (computation.size() > 1) o2 = computation.pop();
-						o1 = computation.pop();
-						try {
-							assignment(o1, o2);
-						} catch (Exception e) {
-							e.printStackTrace();
+						if (queuedTemporal == null) {
+							o2 = computation.pop();
+							o1 = computation.pop();
+						} else {
+							o1 = computation.pop();
+							o2 = queuedTemporal;
 						}
+						assignment(o1, o2);
 						break;
 					case "write":
 						o2 = computation.pop();
 						function(new Function("write"), o2);
+						break;
 					default:
 						computation.push(obj);
 				}
@@ -163,36 +166,116 @@ public class AssemblerBuilder {
 		}
 	}
 
-	private void addition(Object o1, Object o2) {
-		if (o2 == null && o1 instanceof Variable) {
+	private void subtraction(Object o1, Object o2, Variable temporal) {
+		if (o1 instanceof Variable && o2 instanceof Variable) {
 			Variable v1 = (Variable) o1;
-			s.append("\tSUMAR\t").append(v1.Name).append(",\tTEMPORAL")
-					.append(",\t").append("TEMPORAL\n\n");
-		} else if (o2 == null && o1 instanceof Token) {
+			Variable v2 = (Variable) o2;
+			s.append("\tRESTA\t").append(v1.Name).append(",\t").append(v2.Name)
+					.append(",\t").append(temporal.Name).append("\n\n");
+		}
+		else if (o1 instanceof Variable && o2 instanceof Token) {
+			Variable v1 = (Variable) o1;
+			Token t2 = (Token) o2;
+			s.append("\tRESTA\t").append(v1.Name).append(",\t").append(t2.lexeme)
+					.append(",\t").append(temporal.Name).append("\n\n");
+		}
+		else if (o1 instanceof Token && o2 instanceof Variable) {
 			Token t1 = (Token) o1;
-			s.append("\tSUMAR\t").append(t1.lexeme).append(",\tTEMPORAL")
-					.append(",\t").append("TEMPORAL\n\n");
-		} else if (o1 instanceof Variable && o2 instanceof Variable) {
+			Variable v2 = (Variable) o2;
+			s.append("\tRESTA\t").append(t1.lexeme).append(",\t").append(v2.Name)
+					.append(",\t").append(temporal.Name).append("\n\n");
+		}
+		else if (o1 instanceof Token && o2 instanceof Token) {
+			Token t1 = (Token) o1;
+			Token t2 = (Token) o2;
+			s.append("\tRESTA\t").append(t1.lexeme).append(",\t").append(t2.lexeme)
+					.append(",\t").append(temporal.Name).append("\n\n");
+		}
+		queuedTemporal = temporal;
+	}
+
+	private void division(Object o1, Object o2, Variable temporal) {
+		if (o1 instanceof Variable && o2 instanceof Variable) {
+			Variable v1 = (Variable) o1;
+			Variable v2 = (Variable) o2;
+			s.append("\tDIVIDE\t").append(v1.Name).append(",\t").append(v2.Name)
+					.append(",\t").append(temporal.Name).append("\n\n");
+		}
+		else if (o1 instanceof Variable && o2 instanceof Token) {
+			Variable v1 = (Variable) o1;
+			Token t2 = (Token) o2;
+			s.append("\tDIVIDE\t").append(v1.Name).append(",\t").append(t2.lexeme)
+					.append(",\t").append(temporal.Name).append("\n\n");
+		}
+		else if (o1 instanceof Token && o2 instanceof Variable) {
+			Token t1 = (Token) o1;
+			Variable v2 = (Variable) o2;
+			s.append("\tDIVIDE\t").append(t1.lexeme).append(",\t").append(v2.Name)
+					.append(",\t").append(temporal.Name).append("\n\n");
+		}
+		else if (o1 instanceof Token && o2 instanceof Token) {
+			Token t1 = (Token) o1;
+			Token t2 = (Token) o2;
+			s.append("\tDIVIDE\t").append(t1.lexeme).append(",\t").append(t2.lexeme)
+					.append(",\t").append(temporal.Name).append("\n\n");
+		}
+		queuedTemporal = temporal;
+	}
+
+	private void multiplication(Object o1, Object o2, Variable temporal) {
+		if (o1 instanceof Variable && o2 instanceof Variable) {
+			Variable v1 = (Variable) o1;
+			Variable v2 = (Variable) o2;
+			s.append("\tMULTI\t").append(v1.Name).append(",\t").append(v2.Name)
+					.append(",\t").append(temporal.Name).append("\n\n");
+		}
+		else if (o1 instanceof Variable && o2 instanceof Token) {
+			Variable v1 = (Variable) o1;
+			Token t2 = (Token) o2;
+			s.append("\tMULTI\t").append(v1.Name).append(",\t").append(t2.lexeme)
+					.append(",\t").append(temporal.Name).append("\n\n");
+		}
+		else if (o1 instanceof Token && o2 instanceof Variable) {
+			Token t1 = (Token) o1;
+			Variable v2 = (Variable) o2;
+			s.append("\tMULTI\t").append(t1.lexeme).append(",\t").append(v2.Name)
+					.append(",\t").append(temporal.Name).append("\n\n");
+		}
+		else if (o1 instanceof Token && o2 instanceof Token) {
+			Token t1 = (Token) o1;
+			Token t2 = (Token) o2;
+			s.append("\tMULTI\t").append(t1.lexeme).append(",\t").append(t2.lexeme)
+					.append(",\t").append(temporal.Name).append("\n\n");
+		}
+		queuedTemporal = temporal;
+	}
+
+	private void addition(Object o1, Object o2, Variable temporal) throws InterruptedException {
+		if (o1 instanceof Variable && o2 instanceof Variable) {
 			Variable v1 = (Variable) o1;
 			Variable v2 = (Variable) o2;
 			s.append("\tSUMAR\t").append(v1.Name).append(",\t").append(v2.Name)
-					.append(",\t").append("TEMPORAL\n\n");
-		} else if (o1 instanceof Variable && o2 instanceof Token) {
+					.append(",\t").append(temporal.Name).append("\n\n");
+		}
+		else if (o1 instanceof Variable && o2 instanceof Token) {
 			Variable v1 = (Variable) o1;
 			Token t2 = (Token) o2;
 			s.append("\tSUMAR\t").append(v1.Name).append(",\t").append(t2.lexeme)
-					.append(",\t").append("TEMPORAL\n\n");
-		} else if (o1 instanceof Token && o2 instanceof Variable) {
+					.append(",\t").append(temporal.Name).append("\n\n");
+		}
+		else if (o1 instanceof Token && o2 instanceof Variable) {
 			Token t1 = (Token) o1;
 			Variable v2 = (Variable) o2;
 			s.append("\tSUMAR\t").append(t1.lexeme).append(",\t").append(v2.Name)
-					.append(",\t").append("TEMPORAL\n\n");
-		} else if (o1 instanceof Token && o2 instanceof Token) {
+					.append(",\t").append(temporal.Name).append("\n\n");
+		}
+		else if (o1 instanceof Token && o2 instanceof Token) {
 			Token t1 = (Token) o1;
 			Token t2 = (Token) o2;
 			s.append("\tSUMAR\t").append(t1.lexeme).append(",\t").append(t2.lexeme)
-					.append(",\t").append("TEMPORAL\n\n");
+					.append(",\t").append(temporal.Name).append("\n\n");
 		}
+		queuedTemporal = temporal;
 	}
 
 	private void function(Function function, Object obj) {
@@ -240,6 +323,7 @@ public class AssemblerBuilder {
 			v2 = (Variable) o2;
 			s.append("\tI_ASIGNAR\t").append(v1.Name).append(",\t").append(v2.Name).append("\n\n");
 		}
+		queuedTemporal = null;
 	}
 
 	private String parseVariables() {

@@ -107,7 +107,7 @@ public class ShuntingYardParser {
 							if (Objects.equals("(", popped.lexeme)) {
 								continue main;
 							} else {
-								output.add(token);
+								output.add(popped);
 							}
 						}
 						throw new IllegalStateException("Unbalanced right " +
