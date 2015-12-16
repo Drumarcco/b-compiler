@@ -18,12 +18,18 @@ import java.util.stream.Collectors;
  * Created by Marco on 12/12/2015.
  */
 public class AssemblerBuilder {
+	private BaseOperator ADDITION = new BaseOperator("+", false, 7);
+	private BaseOperator SUBTRACTION = new BaseOperator("-", false, 7);
+	private BaseOperator MULTIPLICATION = new BaseOperator("*", false, 15);
+	private BaseOperator DIVISION = new BaseOperator("/", false, 15);
+
 	private LinkedList<Variable> variables;
 	private ArrayList<Object> program;
 	private StringBuilder s;
 	private LinkedBlockingQueue<Variable> temporals;
-	private Variable queuedTemporal = null;
+	private Stack<Variable> stackedTemporals = new Stack<>();
 	private int currentTemporal = 0;
+	private BaseOperator lastOperator = null;
 	final Stack<Object> computation = new Stack<>();
 
 	final String CODE_PREVARS =
@@ -120,35 +126,64 @@ public class AssemblerBuilder {
 				switch (token.lexeme) {
 					case "*":
 						temp = temporals.poll();
-						o2 = computation.pop();
-						o1 = queuedTemporal == null ? computation.pop() : queuedTemporal;
+						if (stackedTemporals.size() == 2) {
+							o2 = stackedTemporals.pop();
+							o1 = stackedTemporals.pop();
+						} else {
+							o2 = computation.pop();
+							o1 = requiresTemporalFromStack(MULTIPLICATION)
+									? stackedTemporals.pop()
+									: computation.pop();
+						}
 						multiplication(o1, o2, temp);
 						break;
 					case "/":
 						temp = temporals.poll();
-						o2 = computation.pop();
-						o1 = queuedTemporal == null ? computation.pop() : queuedTemporal;
+						if (stackedTemporals.size() == 2) {
+							o2 = stackedTemporals.pop();
+							o1 = stackedTemporals.pop();
+						} else {
+							o2 = computation.pop();
+							o1 = requiresTemporalFromStack(DIVISION)
+									? stackedTemporals.pop()
+									: computation.pop();
+						}
 						division(o1, o2, temp);
 						break;
 					case "+":
 						temp = temporals.poll();
-						o2 = computation.pop();
-						o1 = queuedTemporal == null ? computation.pop() : queuedTemporal;
+						if (stackedTemporals.size() == 2) {
+							o2 = stackedTemporals.pop();
+							o1 = stackedTemporals.pop();
+						} else {
+							o2 = computation.pop();
+							o1 = requiresTemporalFromStack(ADDITION)
+									? stackedTemporals.pop()
+									: computation.pop();
+						}
 						addition(o1, o2, temp);
 						break;
 					case "-":
 						temp = temporals.poll();
-						o2 = computation.pop();
-						o1 = queuedTemporal == null ? computation.pop() : queuedTemporal;
+						if (stackedTemporals.size() == 2) {
+							o2 = stackedTemporals.pop();
+							o1 = stackedTemporals.pop();
+						} else {
+							o2 = computation.pop();
+							o1 = requiresTemporalFromStack(SUBTRACTION)
+									? stackedTemporals.pop()
+									: computation.pop();
+						}
 						subtraction(o1, o2, temp);
 						break;
 					case "=":
-						if (queuedTemporal == null) {
+						if (stackedTemporals.isEmpty()) {
 							o2 = computation.pop();
 							o1 = computation.pop();
-						} else {
+						}
+						else {
 							o1 = computation.pop();
-							o2 = queuedTemporal;
+							o2 = stackedTemporals.pop();
 						}
 						assignment(o1, o2);
 						break;
@@ -163,6 +198,21 @@ public class AssemblerBuilder {
 			else {
 				computation.push(obj);
 			}
+		}
+	}
+
+	private boolean requiresTemporalFromStack(BaseOperator operator) {
+		if (lastOperator == null) return false;
+		int result = operator.comparePrecedence(lastOperator);
+		switch (result) {
+			case 1:
+				return false;
+			case 0:
+				return true;
+			case -1:
+				return true;
+			default:
+				return false;
 		}
 	}
 
@@ -191,7 +241,8 @@ public class AssemblerBuilder {
 			s.append("\tRESTA\t").append(t1.lexeme).append(",\t").append(t2.lexeme)
 					.append(",\t").append(temporal.Name).append("\n\n");
 		}
-		queuedTemporal = temporal;
+		stackedTemporals.push(temporal);
+		lastOperator = SUBTRACTION;
 	}
 
 	private void division(Object o1, Object o2, Variable temporal) {
@@ -219,7 +270,8 @@ public class AssemblerBuilder {
 			s.append("\tDIVIDE\t").append(t1.lexeme).append(",\t").append(t2.lexeme)
 					.append(",\t").append(temporal.Name).append("\n\n");
 		}
-		queuedTemporal = temporal;
+		stackedTemporals.push(temporal);
+		lastOperator = DIVISION;
 	}
 
 	private void multiplication(Object o1, Object o2, Variable temporal) {
@@ -247,7 +299,8 @@ public class AssemblerBuilder {
 			s.append("\tMULTI\t").append(t1.lexeme).append(",\t").append(t2.lexeme)
 					.append(",\t").append(temporal.Name).append("\n\n");
 		}
-		queuedTemporal = temporal;
+		stackedTemporals.push(temporal);
+		lastOperator = MULTIPLICATION;
 	}
 
 	private void addition(Object o1, Object o2, Variable temporal) throws InterruptedException {
@@ -275,7 +328,8 @@ public class AssemblerBuilder {
 			s.append("\tSUMAR\t").append(t1.lexeme).append(",\t").append(t2.lexeme)
 					.append(",\t").append(temporal.Name).append("\n\n");
 		}
-		queuedTemporal = temporal;
+		stackedTemporals.push(temporal);
+		lastOperator = ADDITION;
 	}
 
 	private void function(Function function, Object obj) {
@@ -323,7 +377,6 @@ public class AssemblerBuilder {
 			v2 = (Variable) o2;
 			s.append("\tI_ASIGNAR\t").append(v1.Name).append(",\t").append(v2.Name).append("\n\n");
 		}
-		queuedTemporal = null;
 	}
 
 	private String parseVariables() {
