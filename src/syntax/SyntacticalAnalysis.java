@@ -19,7 +19,9 @@ public class SyntacticalAnalysis {
 	private LinkedList<Token> operationTokenList;
 	private ShuntingYardParser parser;
 	private ArrayList<Object> programList;
-	private ArrayList<Object> pCode;
+	private ArrayList<ArrayList<Object>> pCode;
+	private int ifCount = 0;
+//	private int currentIf = 0;
 
 	public SyntacticalAnalysis() {
 		variables = new LinkedList<>();
@@ -64,6 +66,12 @@ public class SyntacticalAnalysis {
 		programList.add(obj);
 	}
 
+	private void addDirectlyToPcode(Object obj) {
+		ArrayList<Object> objectList = new ArrayList<>();
+		objectList.add(obj);
+		pCode.add(objectList);
+	}
+
 	private void evaluateOperation() {
 		ASTNode parseTree = parser.convertInfixNotationToAST(operationTokenList);
 		int type = evaluateAST(parseTree);
@@ -75,10 +83,8 @@ public class SyntacticalAnalysis {
 
 	private void generatePCode() {
 		ArrayList<Object> pSentence = parser.convertInfixNotationToRPN(programList);
-		for (Object obj : pSentence) {
-			pCode.add(obj);
-		}
-		programList = null;
+		pCode.add(pSentence);
+		programList = new ArrayList<>();
 	}
 
 	private int evaluateAST(ASTNode tree) {
@@ -239,6 +245,7 @@ public class SyntacticalAnalysis {
 	}
 
 	private Boolean isStatement() {
+		programList = new ArrayList<>();
 		if (isAuto(currentToken)) {
 			if (isName(currentToken)) {
 				Variable variable = new Variable(currentToken.lexeme, 0);
@@ -331,13 +338,26 @@ public class SyntacticalAnalysis {
 			if (isLeftParenthesis(currentToken)) {
 				getNextToken();
 				if (isBoolean()) {
+					generatePCode();
 					evaluateOperation();
 					if (isRightParenthesis(currentToken)) {
+						int currentIf = ifCount;
+						BRF brf = new BRF("P"+currentIf);
+						addDirectlyToPcode(brf);
+						ifCount++;
 						getNextToken();
 						if (isStatement()) {
+							BRI bri = new BRI("Q"+currentIf);
+							addDirectlyToPcode(bri);
 							if (isElse(currentToken)) {
-								return isStatement();
+								addDirectlyToPcode(new Pointer("P"+currentIf));
+								if (isStatement()){
+									addDirectlyToPcode(new Pointer("Q"+currentIf));
+									return true;
+								}
 							} else {
+								addDirectlyToPcode(new Pointer("P"+currentIf));
+								addDirectlyToPcode(new Pointer("Q"+currentIf));
 								return true;
 							}
 						} else {
@@ -439,14 +459,17 @@ public class SyntacticalAnalysis {
 			printError(509);
 			return false;
 		}
+		return false;
 	}
 
 	private Boolean isBoolean() {
 		if (isRvalue()) {
 			if (isComparator()) {
+				addToProgramList(currentToken);
 				addToOperationList(currentToken);
 				if (isRvalue()) {
 					if (isAndOr()) {
+						addToProgramList(currentToken);
 						addToOperationList(currentToken);
 						return isBoolean();
 					}
@@ -503,7 +526,11 @@ public class SyntacticalAnalysis {
 		} else if (isLvalue()) {
 			if (isAssign()) {
 				if (isRvalue()) {
-					return isRvalueTail();
+					if (isRvalueTail()) {
+						generatePCode();
+						return true;
+					}
+					return false;
 				} else {
 					printError(520);
 					return false;

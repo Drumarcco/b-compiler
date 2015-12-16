@@ -24,7 +24,7 @@ public class AssemblerBuilder {
 	private BaseOperator DIVISION = new BaseOperator("/", false, 15);
 
 	private LinkedList<Variable> variables;
-	private ArrayList<Object> program;
+	private ArrayList<ArrayList<Object>> programs;
 	private StringBuilder s;
 	private LinkedBlockingQueue<Variable> temporals;
 	private Stack<Variable> stackedTemporals = new Stack<>();
@@ -58,24 +58,26 @@ public class AssemblerBuilder {
 			"DEFINE_PRINT_NUM_UNS\n" +
 			"END BEGIN";
 
-	public AssemblerBuilder(ArrayList<Object> program, LinkedList<Variable> variables) {
+	public AssemblerBuilder(ArrayList<ArrayList<Object>> programs, LinkedList<Variable> variables) {
 		this.variables = variables;
-		this.program = program;
+		this.programs = programs;
 		generateTemporals();
 		this.s = new StringBuilder();
 	}
 
 	private void generateTemporals() {
 		temporals = new LinkedBlockingQueue<>();
-		for (Object obj : program) {
-			if (!(obj instanceof Token)) continue;
-			Token token = (Token) obj;
-			if (!isOperator(token)) continue;
-			try {
-				temporals.put(new Variable("T" + currentTemporal, 101));
-				currentTemporal++;
-			} catch (InterruptedException e) {
-				e.printStackTrace();
+		for(ArrayList<Object> program : programs){
+			for (Object obj : program) {
+				if (!(obj instanceof Token)) continue;
+				Token token = (Token) obj;
+				if (!isOperator(token)) continue;
+				try {
+					temporals.put(new Variable("T" + currentTemporal, 101));
+					currentTemporal++;
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
 			}
 		}
 		variables.addAll(temporals.stream().collect(Collectors.toList()));
@@ -117,87 +119,90 @@ public class AssemblerBuilder {
 		 * Type 101: Number
 		 * Type 106: Char
 		 * Type 107: String**/
-		for (Object obj : program) {
-			Object o1 = null;
-			Object o2 = null;
-			Variable temp = null;
-			if (obj instanceof Token) {
-				Token token = (Token) obj;
-				switch (token.lexeme) {
-					case "*":
-						temp = temporals.poll();
-						if (stackedTemporals.size() == 2) {
-							o2 = stackedTemporals.pop();
-							o1 = stackedTemporals.pop();
-						} else {
+		for (ArrayList<Object> program : programs){
+			for (Object obj : program) {
+				Object o1 = null;
+				Object o2 = null;
+				Variable temp = null;
+				if (obj instanceof Token) {
+					Token token = (Token) obj;
+					switch (token.lexeme) {
+						case "*":
+							temp = temporals.poll();
+							if (stackedTemporals.size() == 2) {
+								o2 = stackedTemporals.pop();
+								o1 = stackedTemporals.pop();
+							} else {
+								o2 = computation.pop();
+								o1 = requiresTemporalFromStack(MULTIPLICATION)
+										? stackedTemporals.pop()
+										: computation.pop();
+							}
+							multiplication(o1, o2, temp);
+							break;
+						case "/":
+							temp = temporals.poll();
+							if (stackedTemporals.size() == 2) {
+								o2 = stackedTemporals.pop();
+								o1 = stackedTemporals.pop();
+							} else {
+								o2 = computation.pop();
+								o1 = requiresTemporalFromStack(DIVISION)
+										? stackedTemporals.pop()
+										: computation.pop();
+							}
+							division(o1, o2, temp);
+							break;
+						case "+":
+							temp = temporals.poll();
+							if (stackedTemporals.size() == 2) {
+								o2 = stackedTemporals.pop();
+								o1 = stackedTemporals.pop();
+							} else {
+								o2 = computation.pop();
+								o1 = requiresTemporalFromStack(ADDITION)
+										? stackedTemporals.pop()
+										: computation.pop();
+							}
+							addition(o1, o2, temp);
+							break;
+						case "-":
+							temp = temporals.poll();
+							if (stackedTemporals.size() == 2) {
+								o2 = stackedTemporals.pop();
+								o1 = stackedTemporals.pop();
+							} else {
+								o2 = computation.pop();
+								o1 = requiresTemporalFromStack(SUBTRACTION)
+										? stackedTemporals.pop()
+										: computation.pop();
+							}
+							subtraction(o1, o2, temp);
+							break;
+						case "=":
+							if (stackedTemporals.isEmpty()) {
+								o2 = computation.pop();
+								o1 = computation.pop();
+							}
+							else {
+								o1 = computation.pop();
+								o2 = stackedTemporals.pop();
+							}
+							assignment(o1, o2);
+							break;
+						case "write":
 							o2 = computation.pop();
-							o1 = requiresTemporalFromStack(MULTIPLICATION)
-									? stackedTemporals.pop()
-									: computation.pop();
-						}
-						multiplication(o1, o2, temp);
-						break;
-					case "/":
-						temp = temporals.poll();
-						if (stackedTemporals.size() == 2) {
-							o2 = stackedTemporals.pop();
-							o1 = stackedTemporals.pop();
-						} else {
-							o2 = computation.pop();
-							o1 = requiresTemporalFromStack(DIVISION)
-									? stackedTemporals.pop()
-									: computation.pop();
-						}
-						division(o1, o2, temp);
-						break;
-					case "+":
-						temp = temporals.poll();
-						if (stackedTemporals.size() == 2) {
-							o2 = stackedTemporals.pop();
-							o1 = stackedTemporals.pop();
-						} else {
-							o2 = computation.pop();
-							o1 = requiresTemporalFromStack(ADDITION)
-									? stackedTemporals.pop()
-									: computation.pop();
-						}
-						addition(o1, o2, temp);
-						break;
-					case "-":
-						temp = temporals.poll();
-						if (stackedTemporals.size() == 2) {
-							o2 = stackedTemporals.pop();
-							o1 = stackedTemporals.pop();
-						} else {
-							o2 = computation.pop();
-							o1 = requiresTemporalFromStack(SUBTRACTION)
-									? stackedTemporals.pop()
-									: computation.pop();
-						}
-						subtraction(o1, o2, temp);
-						break;
-					case "=":
-						if (stackedTemporals.isEmpty()) {
-							o2 = computation.pop();
-							o1 = computation.pop();
-						}
-						else {
-							o1 = computation.pop();
-							o2 = stackedTemporals.pop();
-						}
-						assignment(o1, o2);
-						break;
-					case "write":
-						o2 = computation.pop();
-						function(new Function("write"), o2);
-						break;
-					default:
-						computation.push(obj);
+							function(new Function("write"), o2);
+							break;
+						default:
+							computation.push(obj);
+					}
+				}
+				else {
+					computation.push(obj);
 				}
 			}
-			else {
-				computation.push(obj);
-			}
+			lastOperator = null;
 		}
 	}
 

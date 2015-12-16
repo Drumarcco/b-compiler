@@ -36,7 +36,7 @@ public class AssemblerBuilderTest {
 		program.add(new Token("5", 101, 1));
 		program.add(new Token("+", 100, 1));
 
-		assembler = new AssemblerBuilder(program, variables);
+
 	}
 
 	@Test
